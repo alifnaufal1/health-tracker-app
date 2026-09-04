@@ -1,89 +1,113 @@
-import { Platform, StyleSheet } from "react-native";
+import { Gauge, MapPin } from "lucide-react-native";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { HintRow } from "../components/hint-row";
-import { ThemedButton } from "../components/themed-button";
-import { ThemedText } from "../components/themed-text";
-import { ThemedView } from "../components/themed-view";
-import { WebBadge } from "../components/web-badge";
-import { BottomTabInset, MaxContentWidth, Spacing } from "../constants/theme";
-import { useBle } from "../hooks/useBle";
+import { ActiveRunHeader } from "../components/ActiverunHeader";
+import { HeartRateCard } from "../components/HeartRateCard";
+import { StatCard } from "../components/StatCard";
+import { StepsCard } from "../components/Stepscard";
+import { StopButton } from "../components/StopButton";
+import { SyncStatusBar } from "../components/SyncStatusBar";
+
+// TODO: replace this hardcoded object with real data from useBle() / run tracking state
+const MOCK_RUN_DATA = {
+  elapsedLabel: "32:57",
+  isConnected: true,
+  heartRate: {
+    bpm: 148,
+    zoneLabel: "Zone 3 - Cardio",
+    activeBars: 4,
+    currentBarIndex: 3,
+  },
+  steps: 5771,
+  pace: { value: "7:19", unit: "min/km" },
+  distance: { value: "4.50", unit: "kilometers" },
+  calories: { value: "237", unit: "kcal" },
+  cadence: { value: "172", unit: "spm" },
+  syncLabel: "Syncing to server...",
+  isSyncing: true,
+};
 
 export default function DashboardScreen() {
-  const {
-    isConnected,
-    isConnecting,
-    activeDevice,
-    connectToDevice,
-    disconnectFromDevice,
-  } = useBle();
+  const data = MOCK_RUN_DATA;
+
+  const handleStop = () => {
+    // TODO: wire up to actual "stop run" logic
+    console.log("Stop pressed");
+  };
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <ThemedText type="title" style={styles.title}>
-            Dashboard
-          </ThemedText>
-          <ThemedText>
-            Status:{" "}
-            {isConnecting
-              ? "Connecting..."
-              : isConnected
-                ? "Connected"
-                : "Disconnected"}
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedButton
-          title={activeDevice ? "Disconnect" : "Connect"}
-          themeColor="textSecondary"
-          onPress={activeDevice ? disconnectFromDevice : connectToDevice}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <ActiveRunHeader
+          elapsedLabel={data.elapsedLabel}
+          isConnected={data.isConnected}
         />
 
-        {activeDevice && (
-          <ThemedView style={styles.stepContainer}>
-            <HintRow title="id" hint={activeDevice.id} />
-          </ThemedView>
-        )}
+        <HeartRateCard
+          bpm={data.heartRate.bpm}
+          zoneLabel={data.heartRate.zoneLabel}
+          activeBars={data.heartRate.activeBars}
+          currentBarIndex={data.heartRate.currentBarIndex}
+        />
 
-        {Platform.OS === "web" && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <StepsCard steps={data.steps} />
+
+        <View style={styles.row}>
+          <StatCard
+            label="PACE"
+            value={data.pace.value}
+            unit={data.pace.unit}
+            icon={Gauge}
+          />
+          <StatCard
+            label="DISTANCE"
+            value={data.distance.value}
+            unit={data.distance.unit}
+            icon={MapPin}
+          />
+        </View>
+
+        <View style={styles.row}>
+          <StatCard
+            label="Calories"
+            value={data.calories.value}
+            unit={data.calories.unit}
+            variant="compact"
+          />
+          <StatCard
+            label="Cadence"
+            value={data.cadence.value}
+            unit={data.cadence.unit}
+            variant="compact"
+          />
+        </View>
+
+        <View style={styles.spacer} />
+
+        <SyncStatusBar label={data.syncLabel} isSyncing={data.isSyncing} />
+
+        <StopButton onPress={handleStop} />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    flexDirection: "row",
-  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: "center",
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    backgroundColor: "#000",
   },
-  heroSection: {
-    alignItems: "center",
-    justifyContent: "center",
+  container: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    gap: 14,
   },
-  title: {
-    textAlign: "center",
+  row: {
+    flexDirection: "row",
+    gap: 12,
   },
-  code: {
-    textTransform: "uppercase",
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: "stretch",
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  spacer: {
+    flex: 1,
   },
 });
