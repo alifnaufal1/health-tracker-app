@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import { PermissionsAndroid, Platform } from "react-native";
 import { BleManager, Device } from "react-native-ble-plx";
 
@@ -96,4 +97,47 @@ export const disconnectDevice = async (deviceId: string) => {
   } catch (err) {
     console.error("Error disconnecting device:", err);
   }
+};
+
+export const decodeHaylouPayload = (base64String: string) => {
+  const rawBytes = Buffer.from(base64String, "base64");
+  console.info("~~~ble.datasource.decodeHaylouPayload.rawBytes:", rawBytes);
+
+  if (rawBytes[0] === 0xfe && rawBytes[1] === 0xea && rawBytes[3] === 0x0c) {
+    const heartRate = rawBytes[10];
+    console.info("~~~ble.datasource.decodeHaylouPayload.heartRate:", heartRate);
+
+    return {
+      isValid: true,
+      heartRate: heartRate,
+    };
+  }
+
+  return { isValid: false, heartRate: 0 };
+};
+
+export const streamWorkoutData = (
+  deviceId: string,
+  serviceUUID: string,
+  characteristicRX_UUID: string,
+  onDataReceived: (bpm: number) => void,
+) => {
+  manager.monitorCharacteristicForDevice(
+    deviceId,
+    serviceUUID,
+    characteristicRX_UUID,
+    (error, characteristic) => {
+      if (error) {
+        console.error("Gagal membaca stream data:", error);
+        return;
+      }
+
+      if (characteristic?.value) {
+        const decoded = decodeHaylouPayload(characteristic.value);
+        if (decoded.isValid) {
+          onDataReceived(decoded.heartRate);
+        }
+      }
+    },
+  );
 };
