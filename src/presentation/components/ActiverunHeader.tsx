@@ -1,23 +1,25 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ConnectionBadge } from "./ConnectionBadge";
 
 type ActiveRunHeaderProps = {
-  elapsedLabel: string; // e.g. "32:57"
+  elapsedLabel: string;
   isConnected: boolean;
+  onPress: () => void;
 };
 
 export function ActiveRunHeader({
   elapsedLabel,
   isConnected,
+  onPress,
 }: ActiveRunHeaderProps) {
   return (
-    <View style={styles.container}>
+    <Pressable style={styles.container} onPress={onPress}>
       <View>
         <Text style={styles.eyebrow}>ACTIVE RUN</Text>
         <Text style={styles.timer}>{elapsedLabel}</Text>
       </View>
       <ConnectionBadge isConnected={isConnected} />
-    </View>
+    </Pressable>
   );
 }
 

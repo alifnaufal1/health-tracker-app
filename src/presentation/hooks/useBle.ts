@@ -5,7 +5,8 @@ import {
   streamWorkoutData,
 } from "@/data/datasources/ble.datasource";
 import { useState } from "react";
-import { Device } from "react-native-ble-plx";
+import { Alert } from "react-native";
+import { BleErrorCode, Device } from "react-native-ble-plx";
 
 export const useBle = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -21,13 +22,28 @@ export const useBle = () => {
       return;
     }
 
-    scanAndConnectToDevice(
+    await scanAndConnectToDevice(
       (device) => {
         setActiveDevice(device);
       },
       (connectedDevice) => {
         setIsConnected(true);
         setActiveDevice(connectedDevice);
+      },
+      (error) => {
+        if (error.errorCode === BleErrorCode.BluetoothPoweredOff) {
+          Alert.alert(
+            "Bluetooth Off",
+            "Please turn on Bluetooth on your phone to connect the smartwatch.",
+          );
+        } else if (error.errorCode === BleErrorCode.LocationServicesDisabled) {
+          Alert.alert(
+            "Location Off",
+            "Please turn on your phone's GPS/Location.",
+          );
+        } else {
+          Alert.alert("Scan Failed", "There is an error:" + error.message);
+        }
       },
     );
     setIsConnecting(false);

@@ -2,11 +2,13 @@ import { Gauge, MapPin } from "lucide-react-native";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ActiveRunHeader } from "../components/ActiverunHeader";
+import { BackgroundLoading } from "../components/BackgroundLoading";
 import { HeartRateCard } from "../components/HeartRateCard";
 import { StatCard } from "../components/StatCard";
 import { StepsCard } from "../components/Stepscard";
 import { StopButton } from "../components/StopButton";
 import { SyncStatusBar } from "../components/SyncStatusBar";
+import { useBle } from "../hooks/useBle";
 
 // TODO: replace this hardcoded object with real data from useBle() / run tracking state
 const MOCK_RUN_DATA = {
@@ -28,6 +30,14 @@ const MOCK_RUN_DATA = {
 };
 
 export default function DashboardScreen() {
+  const {
+    isConnected,
+    isConnecting,
+    activeDevice,
+    connectToDevice,
+    disconnectFromDevice,
+  } = useBle();
+
   const data = MOCK_RUN_DATA;
 
   const handleStop = () => {
@@ -35,59 +45,71 @@ export default function DashboardScreen() {
     console.log("Stop pressed");
   };
 
+  const handleConnection = () => {
+    if (isConnected) {
+      disconnectFromDevice();
+    } else {
+      connectToDevice();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <ActiveRunHeader
-          elapsedLabel={data.elapsedLabel}
-          isConnected={data.isConnected}
-        />
-
-        <HeartRateCard
-          bpm={data.heartRate.bpm}
-          zoneLabel={data.heartRate.zoneLabel}
-          activeBars={data.heartRate.activeBars}
-          currentBarIndex={data.heartRate.currentBarIndex}
-        />
-
-        <StepsCard steps={data.steps} />
-
-        <View style={styles.row}>
-          <StatCard
-            label="PACE"
-            value={data.pace.value}
-            unit={data.pace.unit}
-            icon={Gauge}
+      <>
+        {isConnecting && <BackgroundLoading />}
+        <View style={styles.container}>
+          <ActiveRunHeader
+            elapsedLabel={data.elapsedLabel}
+            isConnected={isConnected}
+            onPress={handleConnection}
           />
-          <StatCard
-            label="DISTANCE"
-            value={data.distance.value}
-            unit={data.distance.unit}
-            icon={MapPin}
+
+          <HeartRateCard
+            bpm={data.heartRate.bpm}
+            zoneLabel={data.heartRate.zoneLabel}
+            activeBars={data.heartRate.activeBars}
+            currentBarIndex={data.heartRate.currentBarIndex}
           />
+
+          <StepsCard steps={data.steps} />
+
+          <View style={styles.row}>
+            <StatCard
+              label="PACE"
+              value={data.pace.value}
+              unit={data.pace.unit}
+              icon={Gauge}
+            />
+            <StatCard
+              label="DISTANCE"
+              value={data.distance.value}
+              unit={data.distance.unit}
+              icon={MapPin}
+            />
+          </View>
+
+          <View style={styles.row}>
+            <StatCard
+              label="Calories"
+              value={data.calories.value}
+              unit={data.calories.unit}
+              variant="compact"
+            />
+            <StatCard
+              label="Cadence"
+              value={data.cadence.value}
+              unit={data.cadence.unit}
+              variant="compact"
+            />
+          </View>
+
+          <View style={styles.spacer} />
+
+          <SyncStatusBar label={data.syncLabel} isSyncing={false} />
+
+          <StopButton onPress={handleStop} />
         </View>
-
-        <View style={styles.row}>
-          <StatCard
-            label="Calories"
-            value={data.calories.value}
-            unit={data.calories.unit}
-            variant="compact"
-          />
-          <StatCard
-            label="Cadence"
-            value={data.cadence.value}
-            unit={data.cadence.unit}
-            variant="compact"
-          />
-        </View>
-
-        <View style={styles.spacer} />
-
-        <SyncStatusBar label={data.syncLabel} isSyncing={data.isSyncing} />
-
-        <StopButton onPress={handleStop} />
-      </View>
+      </>
     </SafeAreaView>
   );
 }
@@ -100,7 +122,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 40,
     gap: 14,
   },
   row: {

@@ -1,6 +1,6 @@
 import { Buffer } from "buffer";
 import { PermissionsAndroid, Platform } from "react-native";
-import { BleManager, Device } from "react-native-ble-plx";
+import { BleError, BleManager, Device } from "react-native-ble-plx";
 
 const manager = new BleManager();
 let isConnecting = false;
@@ -31,63 +31,78 @@ export const requestBluetoothPermissions = async (): Promise<boolean> => {
   return granted === PermissionsAndroid.RESULTS.GRANTED;
 };
 
-export const scanAndConnectToDevice = async (
+export const scanAndConnectToDevice = (
   onDeviceFound: (device: Device) => void,
   onConnected: (device: Device) => void,
-) => {
-  if (isConnecting) return;
-  isConnecting = true;
-
-  try {
-    const connectedDevices = await manager.connectedDevices([]);
-    const existingDevice = connectedDevices.find(
-      (d) => d.name === "ZL02CPRO" || d.localName === "ZL02CPRO",
-    );
-
-    if (existingDevice) {
-      console.log("Device sudah terhubung secara native, mengaitkan ulang...");
-      onDeviceFound(existingDevice);
-
-      await existingDevice.discoverAllServicesAndCharacteristics();
-      console.log("Services & Characteristics terekspos kembali!");
-
-      onConnected(existingDevice);
-      isConnecting = false;
+  onError: (error: BleError) => void,
+): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    if (isConnecting) {
+      resolve();
       return;
     }
+    isConnecting = true;
 
-    console.log("Start to scan...");
-    manager.startDeviceScan(null, null, async (error, device) => {
-      if (error) {
-        console.error("Error when scanning:", error);
+    try {
+      const connectedDevices = await manager.connectedDevices([]);
+      const existingDevice = connectedDevices.find(
+        (d) => d.name === "ZL02CPRO" || d.localName === "ZL02CPRO",
+      );
+
+      if (existingDevice) {
+        console.log("Device is already connected natively, reconnecting...");
+        onDeviceFound(existingDevice);
+
+        await existingDevice.discoverAllServicesAndCharacteristics();
+        console.log("Services & Characteristics revealed once again!");
+
+        onConnected(existingDevice);
         isConnecting = false;
+        resolve();
         return;
       }
 
-      if (
-        device &&
-        (device.name === "ZL02CPRO" || device.localName === "ZL02CPRO")
-      ) {
-        console.log("Device found!", device.name);
-        manager.stopDeviceScan();
-        onDeviceFound(device);
-
-        try {
-          const connectedDevice = await device.connect();
-          await connectedDevice.discoverAllServicesAndCharacteristics();
-          console.log("Successfully connected and discovered!");
-          onConnected(connectedDevice);
-        } catch (err) {
-          console.error("Fail to connect:", err);
-        } finally {
+      console.log("Start to scan...");
+      manager.startDeviceScan(null, null, async (error, device) => {
+        if (error) {
+          console.error("Error when scanning:", error);
           isConnecting = false;
+          manager.stopDeviceScan();
+          onError(error);
+          reject(error);
+          return;
         }
-      }
-    });
-  } catch (err) {
-    console.error("Error checking native connected devices:", err);
-    isConnecting = false;
-  }
+
+        if (
+          device &&
+          (device.name === "ZL02CPRO" || device.localName === "ZL02CPRO")
+        ) {
+          console.log("Device found!", device.name);
+          manager.stopDeviceScan();
+          onDeviceFound(device);
+
+          try {
+            const connectedDevice = await device.connect();
+            await connectedDevice.discoverAllServicesAndCharacteristics();
+            console.log("Successfully connected and discovered!");
+            onConnected(connectedDevice);
+            resolve();
+          } catch (err) {
+            console.error("Fail to connect:", err);
+            onError(err as BleError);
+            reject(err);
+          } finally {
+            isConnecting = false;
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Error checking native connected devices:", err);
+      isConnecting = false;
+      onError(err as BleError);
+      reject(err);
+    }
+  });
 };
 
 export const disconnectDevice = async (deviceId: string) => {
@@ -128,7 +143,7 @@ export const streamWorkoutData = (
     characteristicRX_UUID,
     (error, characteristic) => {
       if (error) {
-        console.error("Gagal membaca stream data:", error);
+        console.error("Fail to read stream data:", error);
         return;
       }
 
