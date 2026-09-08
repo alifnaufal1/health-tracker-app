@@ -6,7 +6,7 @@ import { BackgroundLoading } from "../components/BackgroundLoading";
 import { HeartRateCard } from "../components/HeartRateCard";
 import { StatCard } from "../components/StatCard";
 import { StepsCard } from "../components/Stepscard";
-import { StopButton } from "../components/StopButton";
+import { PlayButton } from "../components/StopButton";
 import { SyncStatusBar } from "../components/SyncStatusBar";
 import { useBle } from "../hooks/useBle";
 
@@ -34,19 +34,28 @@ export default function DashboardScreen() {
     isConnected,
     isConnecting,
     activeDevice,
+    heartRate,
+    isRunning,
+    isWorkoutStarted,
     connectToDevice,
     disconnectFromDevice,
+    handleStartWorkout,
+    handleStopWorkout,
   } = useBle();
 
   const data = MOCK_RUN_DATA;
 
-  const handleStop = () => {
-    // TODO: wire up to actual "stop run" logic
-    console.log("Stop pressed");
+  const handlePlay = () => {
+    console.log("Start/Stop pressed");
+    if (isWorkoutStarted) {
+      handleStopWorkout;
+    } else {
+      handleStartWorkout();
+    }
   };
 
   const handleConnection = () => {
-    if (isConnected) {
+    if (isConnected && activeDevice) {
       disconnectFromDevice();
     } else {
       connectToDevice();
@@ -65,7 +74,7 @@ export default function DashboardScreen() {
           />
 
           <HeartRateCard
-            bpm={data.heartRate.bpm}
+            bpm={heartRate}
             zoneLabel={data.heartRate.zoneLabel}
             activeBars={data.heartRate.activeBars}
             currentBarIndex={data.heartRate.currentBarIndex}
@@ -107,7 +116,7 @@ export default function DashboardScreen() {
 
           <SyncStatusBar label={data.syncLabel} isSyncing={false} />
 
-          <StopButton onPress={handleStop} />
+          <PlayButton onPress={handlePlay} isPlaying={isWorkoutStarted} />
         </View>
       </>
     </SafeAreaView>

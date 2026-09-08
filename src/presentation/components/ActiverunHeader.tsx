@@ -13,13 +13,15 @@ export function ActiveRunHeader({
   onPress,
 }: ActiveRunHeaderProps) {
   return (
-    <Pressable style={styles.container} onPress={onPress}>
+    <View style={styles.container}>
       <View>
         <Text style={styles.eyebrow}>ACTIVE RUN</Text>
         <Text style={styles.timer}>{elapsedLabel}</Text>
       </View>
-      <ConnectionBadge isConnected={isConnected} />
-    </Pressable>
+      <Pressable onPress={onPress}>
+        <ConnectionBadge isConnected={isConnected} />
+      </Pressable>
+    </View>
   );
 }
 

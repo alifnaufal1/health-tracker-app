@@ -1,18 +1,43 @@
 import {
   disconnectDevice,
+  monitorDeviceDisconnection,
   requestBluetoothPermissions,
   scanAndConnectToDevice,
+  stopWorkout,
   streamWorkoutData,
+  triggerAndListenWorkout,
 } from "@/data/datasources/ble.datasource";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
-import { BleErrorCode, Device } from "react-native-ble-plx";
+import { BleErrorCode, Device, Subscription } from "react-native-ble-plx";
 
 export const useBle = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [activeDevice, setActiveDevice] = useState<Device | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
+  const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
+
+  const heartRateSubscriptionRef = useRef<Subscription | null>(null);
+  const disconnectSubscriptionRef = useRef<Subscription | null>(null);
+
+  useEffect(() => {
+    if (!activeDevice) return;
+
+    disconnectSubscriptionRef.current = monitorDeviceDisconnection(
+      activeDevice.id,
+      () => {
+        setIsConnected(false);
+        setActiveDevice(null);
+        stopHeartRateStream();
+        console.log("Device disconnect natively, state reset to default.");
+      },
+    );
+
+    return () => {
+      disconnectSubscriptionRef.current?.remove();
+    };
+  }, [activeDevice]);
 
   const connectToDevice = async () => {
     setIsConnecting(true);
@@ -54,17 +79,51 @@ export const useBle = () => {
       await disconnectDevice(activeDevice.id);
       setIsConnected(false);
       setActiveDevice(null);
+      stopHeartRateStream();
     }
   };
 
-  const startHeartRateStream = (
-    deviceId: string,
-    serviceUUID: string,
-    rxUUID: string,
-  ) => {
-    streamWorkoutData(deviceId, serviceUUID, rxUUID, (bpm) => {
+  const startHeartRateStream = (deviceId?: string) => {
+    if (!deviceId) {
+      Alert.alert("Start Workout Failed", "Device disconnected");
+      return;
+    }
+    heartRateSubscriptionRef.current?.remove();
+    heartRateSubscriptionRef.current = streamWorkoutData(deviceId, (bpm) => {
       setHeartRate(bpm);
     });
+  };
+
+  const stopHeartRateStream = () => {
+    heartRateSubscriptionRef.current?.remove();
+    heartRateSubscriptionRef.current = null;
+  };
+
+  const handleStartWorkout = async () => {
+    if (!activeDevice) {
+      Alert.alert("Error", "Smartwatch belum terhubung!");
+      return;
+    }
+
+    const success = await triggerAndListenWorkout(activeDevice.id);
+
+    if (success) {
+      setIsWorkoutStarted(true);
+      Alert.alert("Berhasil", "Mode lari diaktifkan pada smartwatch!");
+    } else {
+      Alert.alert("Gagal", "Tidak dapat memicu sensor smartwatch.");
+    }
+  };
+
+  const handleStopWorkout = async (): Promise<void> => {
+    if (!activeDevice) {
+      setIsWorkoutStarted(false);
+      return;
+    }
+
+    await stopWorkout(activeDevice.id);
+    setIsWorkoutStarted(false);
+    stopHeartRateStream();
   };
 
   return {
@@ -72,8 +131,13 @@ export const useBle = () => {
     isConnecting,
     activeDevice,
     heartRate,
+    isRunning: heartRateSubscriptionRef.current !== null ? true : false,
+    isWorkoutStarted,
     connectToDevice,
     disconnectFromDevice,
     startHeartRateStream,
+    stopHeartRateStream,
+    handleStartWorkout,
+    handleStopWorkout,
   };
 };
