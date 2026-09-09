@@ -164,9 +164,26 @@ export const monitorDeviceDisconnection = (
     onDisconnected();
   });
 };
-const FEEA_SERVICE_UUID = "0000feea-0000-1000-8000-00805f9b34fb";
 
+const FEEA_SERVICE_UUID = "0000feea-0000-1000-8000-00805f9b34fb";
 const COMMAND_WRITE_UUID = "0000fee5-0000-1000-8000-00805f9b34fb";
+const HANDSHAKE_PAYLOAD_HEX = "FEEA10065A00";
+
+export const sendHandshake = async (deviceId: string): Promise<void> => {
+  const handshakeBase64 = Buffer.from(HANDSHAKE_PAYLOAD_HEX, "hex").toString(
+    "base64",
+  );
+
+  console.log("Mengirim handshake/unlock...");
+  await manager.writeCharacteristicWithoutResponseForDevice(
+    deviceId,
+    FEEA_SERVICE_UUID,
+    COMMAND_WRITE_UUID,
+    handshakeBase64,
+  );
+
+  await new Promise((resolve) => setTimeout(resolve, 300));
+};
 
 const NOTIFY_CANDIDATES = [
   "0000fee1-0000-1000-8000-00805f9b34fb",
@@ -201,7 +218,9 @@ export const triggerAndListenWorkout = async (
 
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const startPayloadHex = "FEEA20060101";
+    await sendHandshake(deviceId);
+
+    const startPayloadHex = "FEEA20061E01";
     const startBase64 = Buffer.from(startPayloadHex, "hex").toString("base64");
 
     console.log(`Mencoba kirim command start ke: ${COMMAND_WRITE_UUID}`);
