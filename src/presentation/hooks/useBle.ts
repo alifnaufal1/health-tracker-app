@@ -1,104 +1,53 @@
-import {
-  disconnectDevice,
-  monitorDeviceDisconnection,
-  requestBluetoothPermissions,
-  scanAndConnectToDevice,
-  startPassiveWorkoutMonitoring,
-  stopPassiveWorkoutMonitoring,
-  streamWorkoutData,
-} from "@/data/datasources/ble.datasource";
 import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
-import { BleErrorCode, Device, Subscription } from "react-native-ble-plx";
+import { BleDevice } from "../../domain/entities/BleDevice";
+import { bleContainer } from "../di/BleContainer";
 
 export const useBle = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [activeDevice, setActiveDevice] = useState<Device | null>(null);
+  const [activeDevice, setActiveDevice] = useState<BleDevice | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
   const [isMonitoring, setIsMonitoring] = useState(false);
 
-  const heartRateSubscriptionRef = useRef<Subscription | null>(null);
-  const disconnectSubscriptionRef = useRef<Subscription | null>(null);
+  const disconnectUnsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!activeDevice) return;
 
-    disconnectSubscriptionRef.current = monitorDeviceDisconnection(
-      activeDevice.id,
-      () => {
+    disconnectUnsubscribeRef.current =
+      bleContainer.repository.onDeviceDisconnected(activeDevice.id, () => {
         setIsConnected(false);
         setActiveDevice(null);
         setIsMonitoring(false);
-        stopHeartRateStream();
-        stopPassiveWorkoutMonitoring();
-        console.log("Device disconnect natively, state reset to default.");
-      },
-    );
+        bleContainer.startWorkoutMonitoring.stop();
+      });
 
     return () => {
-      disconnectSubscriptionRef.current?.remove();
+      disconnectUnsubscribeRef.current?.();
     };
   }, [activeDevice]);
 
   const connectToDevice = async () => {
     setIsConnecting(true);
-    const hasPermission = await requestBluetoothPermissions();
-    if (!hasPermission) {
-      console.error("Permission rejected by user");
-      return;
+    try {
+      const device = await bleContainer.connectToDevice.execute();
+      setActiveDevice(device);
+      setIsConnected(true);
+    } catch (error) {
+      Alert.alert("Fail to Connect", (error as Error).message);
+    } finally {
+      setIsConnecting(false);
     }
-
-    await scanAndConnectToDevice(
-      (device) => {
-        setActiveDevice(device);
-      },
-      (connectedDevice) => {
-        setIsConnected(true);
-        setActiveDevice(connectedDevice);
-      },
-      (error) => {
-        if (error.errorCode === BleErrorCode.BluetoothPoweredOff) {
-          Alert.alert(
-            "Bluetooth Off",
-            "Please turn on Bluetooth on your phone to connect the smartwatch.",
-          );
-        } else if (error.errorCode === BleErrorCode.LocationServicesDisabled) {
-          Alert.alert(
-            "Location Off",
-            "Please turn on your phone's GPS/Location.",
-          );
-        } else {
-          Alert.alert("Scan Failed", "There is an error:" + error.message);
-        }
-      },
-    );
-    setIsConnecting(false);
   };
 
   const disconnectFromDevice = async () => {
-    if (activeDevice) {
-      await disconnectDevice(activeDevice.id);
-      setIsConnected(false);
-      setActiveDevice(null);
-      stopHeartRateStream();
-    }
-  };
-
-  const startHeartRateStream = (deviceId?: string) => {
-    if (!deviceId) {
-      Alert.alert("Start Workout Failed", "Device disconnected");
-      return;
-    }
-    heartRateSubscriptionRef.current?.remove();
-    heartRateSubscriptionRef.current = streamWorkoutData(deviceId, (bpm) => {
-      setHeartRate(bpm);
-    });
-  };
-
-  const stopHeartRateStream = () => {
-    heartRateSubscriptionRef.current?.remove();
-    heartRateSubscriptionRef.current = null;
+    if (!activeDevice) return;
+    await bleContainer.disconnectDevice.execute(activeDevice.id);
+    setIsConnected(false);
+    setActiveDevice(null);
+    setIsMonitoring(false);
+    bleContainer.startWorkoutMonitoring.stop();
   };
 
   const startMonitoring = () => {
@@ -107,18 +56,21 @@ export const useBle = () => {
       return;
     }
 
-    startHeartRateStream(activeDevice.id);
-    startPassiveWorkoutMonitoring(activeDevice.id, (charUuid, rawValue) => {
-      // TODO: decode data tambahan (distance/steps/dll) kalau sudah
-      console.log(`[data ${charUuid}]`, rawValue);
+    bleContainer.startWorkoutMonitoring.execute(activeDevice.id, {
+      onHeartRate: (heartRate) => setHeartRate(heartRate.bpm),
+      onWorkoutData: (data) => {
+        console.log(
+          `[workout data ${data.characteristicId}]`,
+          data.base64Value,
+        );
+      },
     });
 
     setIsMonitoring(true);
   };
 
   const stopMonitoring = () => {
-    stopHeartRateStream();
-    stopPassiveWorkoutMonitoring();
+    bleContainer.startWorkoutMonitoring.stop();
     setIsMonitoring(false);
   };
 
@@ -127,12 +79,9 @@ export const useBle = () => {
     isConnecting,
     activeDevice,
     heartRate,
-    isRunning: heartRateSubscriptionRef.current !== null ? true : false,
     isMonitoring,
     connectToDevice,
     disconnectFromDevice,
-    startHeartRateStream,
-    stopHeartRateStream,
     startMonitoring,
     stopMonitoring,
   };
