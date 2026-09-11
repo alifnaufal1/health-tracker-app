@@ -35,22 +35,20 @@ export default function DashboardScreen() {
     isConnecting,
     activeDevice,
     heartRate,
-    isRunning,
-    isWorkoutStarted,
+    isMonitoring,
     connectToDevice,
     disconnectFromDevice,
-    handleStartWorkout,
-    handleStopWorkout,
+    startMonitoring,
+    stopMonitoring,
   } = useBle();
 
   const data = MOCK_RUN_DATA;
 
-  const handlePlay = () => {
-    console.log("Start/Stop pressed");
-    if (isWorkoutStarted) {
-      handleStopWorkout;
+  const handleMonitorToggle = () => {
+    if (isMonitoring) {
+      stopMonitoring();
     } else {
-      handleStartWorkout();
+      startMonitoring();
     }
   };
 
@@ -116,7 +114,7 @@ export default function DashboardScreen() {
 
           <SyncStatusBar label={data.syncLabel} isSyncing={false} />
 
-          <PlayButton onPress={handlePlay} isPlaying={isWorkoutStarted} />
+          <PlayButton onPress={handleMonitorToggle} isPlaying={isMonitoring} />
         </View>
       </>
     </SafeAreaView>
@@ -140,5 +138,17 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
+  },
+  instructionBanner: {
+    backgroundColor: "rgba(34,197,94,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.3)",
+    borderRadius: 12,
+    padding: 12,
+  },
+  instructionText: {
+    color: "#22c55e",
+    fontSize: 13,
+    textAlign: "center",
   },
 });

@@ -3,9 +3,9 @@ import {
   monitorDeviceDisconnection,
   requestBluetoothPermissions,
   scanAndConnectToDevice,
-  stopWorkout,
+  startPassiveWorkoutMonitoring,
+  stopPassiveWorkoutMonitoring,
   streamWorkoutData,
-  triggerAndListenWorkout,
 } from "@/data/datasources/ble.datasource";
 import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
@@ -16,7 +16,7 @@ export const useBle = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [activeDevice, setActiveDevice] = useState<Device | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
-  const [isWorkoutStarted, setIsWorkoutStarted] = useState(false);
+  const [isMonitoring, setIsMonitoring] = useState(false);
 
   const heartRateSubscriptionRef = useRef<Subscription | null>(null);
   const disconnectSubscriptionRef = useRef<Subscription | null>(null);
@@ -29,7 +29,9 @@ export const useBle = () => {
       () => {
         setIsConnected(false);
         setActiveDevice(null);
+        setIsMonitoring(false);
         stopHeartRateStream();
+        stopPassiveWorkoutMonitoring();
         console.log("Device disconnect natively, state reset to default.");
       },
     );
@@ -99,31 +101,25 @@ export const useBle = () => {
     heartRateSubscriptionRef.current = null;
   };
 
-  const handleStartWorkout = async () => {
+  const startMonitoring = () => {
     if (!activeDevice) {
       Alert.alert("Error", "Smartwatch belum terhubung!");
       return;
     }
 
-    const success = await triggerAndListenWorkout(activeDevice.id);
+    startHeartRateStream(activeDevice.id);
+    startPassiveWorkoutMonitoring(activeDevice.id, (charUuid, rawValue) => {
+      // TODO: decode data tambahan (distance/steps/dll) kalau sudah
+      console.log(`[data ${charUuid}]`, rawValue);
+    });
 
-    if (success) {
-      setIsWorkoutStarted(true);
-      Alert.alert("Berhasil", "Mode lari diaktifkan pada smartwatch!");
-    } else {
-      Alert.alert("Gagal", "Tidak dapat memicu sensor smartwatch.");
-    }
+    setIsMonitoring(true);
   };
 
-  const handleStopWorkout = async (): Promise<void> => {
-    if (!activeDevice) {
-      setIsWorkoutStarted(false);
-      return;
-    }
-
-    await stopWorkout(activeDevice.id);
-    setIsWorkoutStarted(false);
+  const stopMonitoring = () => {
     stopHeartRateStream();
+    stopPassiveWorkoutMonitoring();
+    setIsMonitoring(false);
   };
 
   return {
@@ -132,12 +128,12 @@ export const useBle = () => {
     activeDevice,
     heartRate,
     isRunning: heartRateSubscriptionRef.current !== null ? true : false,
-    isWorkoutStarted,
+    isMonitoring,
     connectToDevice,
     disconnectFromDevice,
     startHeartRateStream,
     stopHeartRateStream,
-    handleStartWorkout,
-    handleStopWorkout,
+    startMonitoring,
+    stopMonitoring,
   };
 };

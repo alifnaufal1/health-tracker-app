@@ -6,7 +6,12 @@ import {
   Device,
   Subscription,
 } from "react-native-ble-plx";
-import { HR_CHAR_RX_UUID, HR_SERVICE_UUID } from "../constants/ble.constants";
+import {
+  FEEA_SERVICE_UUID,
+  HR_CHAR_RX_UUID,
+  HR_SERVICE_UUID,
+  WORKOUT_DATA_CANDIDATES,
+} from "../constants/ble.constants";
 
 const manager = new BleManager();
 let isConnecting = false;
@@ -120,6 +125,41 @@ export const disconnectDevice = async (deviceId: string) => {
   }
 };
 
+let activeMonitorSubscriptions: Subscription[] = [];
+
+export const startPassiveWorkoutMonitoring = (
+  deviceId: string,
+  onRawData: (charUuid: string, base64Value: string) => void,
+): void => {
+  stopPassiveWorkoutMonitoring();
+
+  activeMonitorSubscriptions = WORKOUT_DATA_CANDIDATES.map((charUuid) =>
+    manager.monitorCharacteristicForDevice(
+      deviceId,
+      FEEA_SERVICE_UUID,
+      charUuid,
+      (error, characteristic) => {
+        if (error) {
+          console.warn(`[monitor ${charUuid}] error:`, error.message);
+          return;
+        }
+        if (characteristic?.value) {
+          onRawData(charUuid, characteristic.value);
+        }
+      },
+    ),
+  );
+
+  console.log(
+    "Passive workout monitoring aktif (menunggu user start manual di watch).",
+  );
+};
+
+export const stopPassiveWorkoutMonitoring = (): void => {
+  activeMonitorSubscriptions.forEach((sub) => sub.remove());
+  activeMonitorSubscriptions = [];
+};
+
 export const decodeStandardHeartRate = (base64String: string) => {
   const rawBytes = Buffer.from(base64String, "base64");
   const is16Bit = (rawBytes[0] & 0x01) !== 0;
@@ -144,7 +184,6 @@ export const streamWorkoutData = (
         console.error("Fail to read stream data:", error);
         return;
       }
-
       if (characteristic?.value) {
         const decoded = decodeStandardHeartRate(characteristic.value);
         if (decoded.isValid) {
@@ -165,7 +204,6 @@ export const monitorDeviceDisconnection = (
   });
 };
 
-const FEEA_SERVICE_UUID = "0000feea-0000-1000-8000-00805f9b34fb";
 const COMMAND_WRITE_UUID = "0000fee5-0000-1000-8000-00805f9b34fb";
 const HANDSHAKE_PAYLOAD_HEX = "FEEA10065A00";
 
@@ -173,103 +211,49 @@ export const sendHandshake = async (deviceId: string): Promise<void> => {
   const handshakeBase64 = Buffer.from(HANDSHAKE_PAYLOAD_HEX, "hex").toString(
     "base64",
   );
-
-  console.log("Mengirim handshake/unlock...");
   await manager.writeCharacteristicWithoutResponseForDevice(
     deviceId,
     FEEA_SERVICE_UUID,
     COMMAND_WRITE_UUID,
     handshakeBase64,
   );
-
   await new Promise((resolve) => setTimeout(resolve, 300));
 };
 
-const NOTIFY_CANDIDATES = [
-  "0000fee1-0000-1000-8000-00805f9b34fb",
-  "0000fee3-0000-1000-8000-00805f9b34fb",
+const START_RUN_SEQUENCE: { hex: string; delayMsFromStart: number }[] = [
+  { hex: "FEEA20061E01", delayMsFromStart: 0 },
+  { hex: "FEEA20066801", delayMsFromStart: 556 },
+  { hex: "FEEA20061B00", delayMsFromStart: 1269 },
+  { hex: "FEEA20061A00", delayMsFromStart: 1421 },
+  { hex: "FEEA2007B91002", delayMsFromStart: 4218 },
+  { hex: "FEEA2007B91001", delayMsFromStart: 4498 },
+  { hex: "FEEA200C7701000800085A00", delayMsFromStart: 6124 },
+  { hex: "FEEA20063302", delayMsFromStart: 6263 },
+  { hex: "FEEA2007B60002", delayMsFromStart: 6786 },
+  { hex: "FEEA20063304", delayMsFromStart: 6940 },
 ];
 
-let activeMonitorSubscriptions: Subscription[] = [];
-
-export const triggerAndListenWorkout = async (
+export const replayStartRunSequence = async (
   deviceId: string,
 ): Promise<boolean> => {
   try {
-    stopWorkoutMonitoring();
+    const sequenceStartTime = Date.now();
+    for (const step of START_RUN_SEQUENCE) {
+      const elapsed = Date.now() - sequenceStartTime;
+      const waitTime = step.delayMsFromStart - elapsed;
+      if (waitTime > 0) await new Promise((r) => setTimeout(r, waitTime));
 
-    activeMonitorSubscriptions = NOTIFY_CANDIDATES.map((charUuid) =>
-      manager.monitorCharacteristicForDevice(
+      const payloadBase64 = Buffer.from(step.hex, "hex").toString("base64");
+      await manager.writeCharacteristicWithoutResponseForDevice(
         deviceId,
         FEEA_SERVICE_UUID,
-        charUuid,
-        (error, characteristic) => {
-          if (error) {
-            console.warn(`[monitor ${charUuid}] error:`, error.message);
-            return;
-          }
-          console.log(
-            `[monitor ${charUuid}] data masuk (base64):`,
-            characteristic?.value,
-          );
-        },
-      ),
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    await sendHandshake(deviceId);
-
-    const startPayloadHex = "FEEA20061E01";
-    const startBase64 = Buffer.from(startPayloadHex, "hex").toString("base64");
-
-    console.log(`Mencoba kirim command start ke: ${COMMAND_WRITE_UUID}`);
-
-    await manager.writeCharacteristicWithoutResponseForDevice(
-      deviceId,
-      FEEA_SERVICE_UUID,
-      COMMAND_WRITE_UUID,
-      startBase64,
-    );
-
-    console.log("Command start terkirim.");
+        COMMAND_WRITE_UUID,
+        payloadBase64,
+      );
+    }
     return true;
   } catch (error) {
-    console.error("Gagal memicu lari:", error);
-    stopWorkoutMonitoring();
+    console.error("Gagal mengirim rangkaian start-run:", error);
     return false;
   }
-};
-
-export const stopWorkoutMonitoring = () => {
-  activeMonitorSubscriptions.forEach((sub) => sub.remove());
-  activeMonitorSubscriptions = [];
-  console.log("Semua notify subscription untuk workout sudah dilepas.");
-};
-
-export const sendStopWorkoutCommand = async (
-  deviceId: string,
-): Promise<boolean> => {
-  try {
-    const stopPayloadHex = "FEEA20060100";
-    const stopBase64 = Buffer.from(stopPayloadHex, "hex").toString("base64");
-
-    await manager.writeCharacteristicWithoutResponseForDevice(
-      deviceId,
-      FEEA_SERVICE_UUID,
-      COMMAND_WRITE_UUID,
-      stopBase64,
-    );
-
-    console.log("Command stop terkirim (payload masih tebakan).");
-    return true;
-  } catch (error) {
-    console.error("Gagal mengirim command stop:", error);
-    return false;
-  }
-};
-
-export const stopWorkout = async (deviceId: string): Promise<void> => {
-  await sendStopWorkoutCommand(deviceId);
-  stopWorkoutMonitoring();
 };
