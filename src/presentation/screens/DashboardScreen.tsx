@@ -36,6 +36,7 @@ export default function DashboardScreen() {
     activeDevice,
     heartRate,
     isMonitoring,
+    runningData,
     connectToDevice,
     disconnectFromDevice,
     startMonitoring,
@@ -78,7 +79,7 @@ export default function DashboardScreen() {
             currentBarIndex={data.heartRate.currentBarIndex}
           />
 
-          <StepsCard steps={data.steps} />
+          <StepsCard steps={runningData?.steps} />
 
           <View style={styles.row}>
             <StatCard
@@ -89,7 +90,7 @@ export default function DashboardScreen() {
             />
             <StatCard
               label="DISTANCE"
-              value={data.distance.value}
+              value={runningData?.distance.toString() ?? "0"}
               unit={data.distance.unit}
               icon={MapPin}
             />
@@ -98,7 +99,7 @@ export default function DashboardScreen() {
           <View style={styles.row}>
             <StatCard
               label="Calories"
-              value={data.calories.value}
+              value={runningData?.calory.toString() ?? "0"}
               unit={data.calories.unit}
               variant="compact"
             />

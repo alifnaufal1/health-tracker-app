@@ -1,9 +1,11 @@
 import { BleDevice } from "../../domain/entities/BleDevice";
 import { HeartRate } from "../../domain/entities/HeartRate";
-import { WorkoutRawData } from "../../domain/entities/WorkoutRawData";
+import { RunData } from "../../domain/entities/RunData";
 import { IBleRepository } from "../../domain/repositories/IBleRepository";
 import * as bleDatasource from "../datasources/ble.datasource";
-import { mapToHeartRate } from "../mappers/heartRate.mapper";
+import { BleDeviceModel } from "../models/BleDeviceModel";
+import { HeartRateModel } from "../models/HeartRateModel";
+import { RunRawDataModel } from "../models/RunRawDataModel";
 
 export class BleRepositoryImpl implements IBleRepository {
   requestPermissions(): Promise<boolean> {
@@ -15,11 +17,10 @@ export class BleRepositoryImpl implements IBleRepository {
       bleDatasource.scanAndConnectToDevice(
         () => {},
         (device) => {
-          resolve({ id: device.id, name: device.name });
+          const model = BleDeviceModel.fromDevice(device);
+          resolve(model.toEntity());
         },
-        (error) => {
-          reject(error);
-        },
+        (error) => reject(error),
       );
     });
   }
@@ -35,26 +36,31 @@ export class BleRepositoryImpl implements IBleRepository {
     const subscription = bleDatasource.streamHeartRateData(
       deviceId,
       (base64Value) => {
-        onData(mapToHeartRate(base64Value));
+        const model = HeartRateModel.fromBase64(base64Value);
+        onData(model.toEntity());
       },
     );
     return () => subscription.remove();
   }
 
-  startPassiveWorkoutMonitoring(
+  startPassiveRunMonitoring(
     deviceId: string,
-    onData: (data: WorkoutRawData) => void,
+    onData: (data: RunData) => void,
   ): void {
-    bleDatasource.startPassiveWorkoutMonitoring(
+    bleDatasource.startPassiveRunMonitoring(
       deviceId,
       (characteristicId, base64Value) => {
-        onData({ characteristicId, base64Value });
+        const model = RunRawDataModel.fromNotification(
+          characteristicId,
+          base64Value,
+        );
+        onData(model.toEntity());
       },
     );
   }
 
-  stopPassiveWorkoutMonitoring(): void {
-    bleDatasource.stopPassiveWorkoutMonitoring();
+  stopPassiveRunMonitoring(): void {
+    bleDatasource.stopPassiveRunMonitoring();
   }
 
   onDeviceDisconnected(

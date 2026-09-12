@@ -1,8 +1,8 @@
 import { HeartRate } from "../entities/HeartRate";
-import { WorkoutRawData } from "../entities/WorkoutRawData";
+import { RunData } from "../entities/RunData";
 import { IBleRepository } from "../repositories/IBleRepository";
 
-export class StartWorkoutMonitoring {
+export class StartRunMonitoring {
   private unsubscribeHeartRate: (() => void) | null = null;
 
   constructor(private repo: IBleRepository) {}
@@ -10,8 +10,8 @@ export class StartWorkoutMonitoring {
   execute(
     deviceId: string,
     callbacks: {
-      onHeartRate: (sample: HeartRate) => void;
-      onWorkoutData: (data: WorkoutRawData) => void;
+      onHeartRate: (data: HeartRate) => void;
+      onRunData: (data: RunData) => void;
     },
   ): void {
     this.unsubscribeHeartRate = this.repo.streamHeartRate(
@@ -19,12 +19,12 @@ export class StartWorkoutMonitoring {
       callbacks.onHeartRate,
     );
 
-    this.repo.startPassiveWorkoutMonitoring(deviceId, callbacks.onWorkoutData);
+    this.repo.startPassiveRunMonitoring(deviceId, callbacks.onRunData);
   }
 
   stop(): void {
     this.unsubscribeHeartRate?.();
     this.unsubscribeHeartRate = null;
-    this.repo.stopPassiveWorkoutMonitoring();
+    this.repo.stopPassiveRunMonitoring();
   }
 }

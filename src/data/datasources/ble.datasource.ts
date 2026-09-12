@@ -131,11 +131,11 @@ export const streamHeartRateData = (
   );
 };
 
-export const startPassiveWorkoutMonitoring = (
+export const startPassiveRunMonitoring = (
   deviceId: string,
   onRawData: (charUuid: string, base64Value: string) => void,
 ): void => {
-  stopPassiveWorkoutMonitoring();
+  stopPassiveRunMonitoring();
 
   activeMonitorSubscriptions = WO_DATA_CANDIDATES.map((charUuid) =>
     manager.monitorCharacteristicForDevice(
@@ -155,7 +155,7 @@ export const startPassiveWorkoutMonitoring = (
   );
 };
 
-export const stopPassiveWorkoutMonitoring = (): void => {
+export const stopPassiveRunMonitoring = (): void => {
   activeMonitorSubscriptions.forEach((sub) => sub.remove());
   activeMonitorSubscriptions = [];
 };

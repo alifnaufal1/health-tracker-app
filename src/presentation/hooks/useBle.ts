@@ -1,13 +1,15 @@
+import { RunData } from "@/domain/entities/RunData";
 import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { BleDevice } from "../../domain/entities/BleDevice";
-import { bleContainer } from "../di/BleContainer";
+import { bleContainer } from "../di/bleContainer";
 
 export const useBle = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [activeDevice, setActiveDevice] = useState<BleDevice | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
+  const [runningData, setRunningData] = useState<RunData | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
 
   const disconnectUnsubscribeRef = useRef<(() => void) | null>(null);
@@ -52,17 +54,14 @@ export const useBle = () => {
 
   const startMonitoring = () => {
     if (!activeDevice) {
-      Alert.alert("Error", "Smartwatch belum terhubung!");
+      Alert.alert("Error", "Smartwatch not connected yet!");
       return;
     }
 
     bleContainer.startWorkoutMonitoring.execute(activeDevice.id, {
       onHeartRate: (heartRate) => setHeartRate(heartRate.bpm),
-      onWorkoutData: (data) => {
-        console.log(
-          `[workout data ${data.characteristicId}]`,
-          data.base64Value,
-        );
+      onRunData: (data) => {
+        setRunningData(data);
       },
     });
 
@@ -80,6 +79,7 @@ export const useBle = () => {
     activeDevice,
     heartRate,
     isMonitoring,
+    runningData,
     connectToDevice,
     disconnectFromDevice,
     startMonitoring,

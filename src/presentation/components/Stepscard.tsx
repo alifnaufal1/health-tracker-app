@@ -2,7 +2,7 @@ import { PersonStanding } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
 
 type StepsCardProps = {
-  steps: number;
+  steps?: number;
 };
 
 export function StepsCard({ steps }: StepsCardProps) {
@@ -14,7 +14,7 @@ export function StepsCard({ steps }: StepsCardProps) {
       </View>
 
       <View style={styles.valueRow}>
-        <Text style={styles.value}>{steps.toLocaleString("en-US")}</Text>
+        <Text style={styles.value}>{steps?.toLocaleString("en-US") || 0}</Text>
         <Text style={styles.unit}>steps</Text>
       </View>
     </View>
