@@ -1,14 +1,6 @@
 import { Buffer } from "buffer";
 import { RunData } from "../../domain/entities/RunData";
 
-/**
- * Model untuk data mentah dari service feea (fee1/fee3).
- * Struktur byte-nya belum sepenuhnya diketahui (lihat catatan investigasi
- * di ble.experimental.datasource.ts), jadi untuk sekarang cuma diteruskan
- * sebagai base64 mentah. Kalau nanti pola byte-nya sudah pasti
- * (misal fee1 = [stepCount, ?, timeCounter]), tambahkan method decode
- * di sini, persis seperti pola HeartRateModel.fromBase64().
- */
 export class RunRawDataModel {
   constructor(
     public characteristicId: string,

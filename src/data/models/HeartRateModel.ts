@@ -16,6 +16,8 @@ export class HeartRateModel {
    * byte 1 (and 2 if 16-bit) = BPM value
    */
   static fromBase64(base64String: string): HeartRateModel {
+    console.info("fromBase64().base64String:", base64String);
+
     const rawBytes = Buffer.from(base64String, "base64");
     const is16Bit = (rawBytes[0] & 0x01) !== 0;
     const bpm = is16Bit ? rawBytes.readUInt16LE(1) : rawBytes[1];
