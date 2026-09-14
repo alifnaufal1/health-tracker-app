@@ -1,13 +1,15 @@
 import { Gauge, MapPin } from "lucide-react-native";
+import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ActiveRunHeader } from "../components/ActiverunHeader";
 import { BackgroundLoading } from "../components/BackgroundLoading";
+import { Header } from "../components/Header";
 import { HeartRateCard } from "../components/HeartRateCard";
 import { StatCard } from "../components/StatCard";
 import { StepsCard } from "../components/Stepscard";
 import { PlayButton } from "../components/StopButton";
 import { SyncStatusBar } from "../components/SyncStatusBar";
+import { useAuth } from "../hooks/useAuth";
 import { useBle } from "../hooks/useBle";
 
 // TODO: replace this hardcoded object with real data from useBle() / run tracking state
@@ -37,13 +39,23 @@ export default function DashboardScreen() {
     heartRate,
     isMonitoring,
     runningData,
+    time,
+    isTimerRunning,
+    formatTime,
     connectToDevice,
     disconnectFromDevice,
     startMonitoring,
     stopMonitoring,
   } = useBle();
+  const { user, isLoading, register } = useAuth();
 
   const data = MOCK_RUN_DATA;
+
+  useEffect(() => {
+    if (!user) {
+      register("Agus Budi Cipto", "Agus", "AgusGanteng1");
+    }
+  }, [user]);
 
   const handleMonitorToggle = () => {
     if (isMonitoring) {
@@ -64,11 +76,14 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <>
-        {isConnecting && <BackgroundLoading />}
+        {(isConnecting || isLoading) && <BackgroundLoading />}
         <View style={styles.container}>
-          <ActiveRunHeader
-            elapsedLabel={data.elapsedLabel}
+          <Header
+            label={
+              isTimerRunning ? formatTime(time) : user ? user.nickname : "Agus"
+            }
             isConnected={isConnected}
+            isMonitoring={isMonitoring}
             onPress={handleConnection}
           />
 

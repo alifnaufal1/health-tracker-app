@@ -16,7 +16,7 @@ export interface IBleRepository {
 
   startPassiveRunMonitoring(
     deviceId: string,
-    onData: (data: RunData) => void,
+    onData: (data: RunData | null) => void,
   ): void;
 
   stopPassiveRunMonitoring(): void;

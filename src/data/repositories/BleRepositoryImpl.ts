@@ -45,16 +45,19 @@ export class BleRepositoryImpl implements IBleRepository {
 
   startPassiveRunMonitoring(
     deviceId: string,
-    onData: (data: RunData) => void,
+    onData: (data: RunData | null) => void,
   ): void {
     bleDatasource.startPassiveRunMonitoring(
       deviceId,
       (characteristicId, base64Value) => {
-        const model = RunRawDataModel.fromNotification(
-          characteristicId,
-          base64Value,
+        onData(
+          base64Value.startsWith("/")
+            ? null
+            : RunRawDataModel.fromNotification(
+                characteristicId,
+                base64Value,
+              ).toEntity(),
         );
-        onData(model.toEntity());
       },
     );
   }

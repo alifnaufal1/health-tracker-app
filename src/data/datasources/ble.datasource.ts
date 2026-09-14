@@ -147,7 +147,7 @@ export const startPassiveRunMonitoring = (
           console.warn(`[monitor ${charUuid}] error:`, error.message);
           return;
         }
-        if (characteristic?.value && !characteristic.value.startsWith("/")) {
+        if (characteristic?.value) {
           onRawData(charUuid, characteristic.value);
         }
       },

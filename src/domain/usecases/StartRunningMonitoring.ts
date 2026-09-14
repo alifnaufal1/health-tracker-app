@@ -11,7 +11,7 @@ export class StartRunMonitoring {
     deviceId: string,
     callbacks: {
       onHeartRate: (data: HeartRate) => void;
-      onRunData: (data: RunData) => void;
+      onRunData: (data: RunData | null) => void;
     },
   ): void {
     this.unsubscribeHeartRate = this.repo.streamHeartRate(

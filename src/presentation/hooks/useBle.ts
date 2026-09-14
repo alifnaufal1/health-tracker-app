@@ -11,8 +11,11 @@ export const useBle = () => {
   const [heartRate, setHeartRate] = useState<number>(0);
   const [runningData, setRunningData] = useState<RunData | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
+  const [time, setTime] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   const disconnectUnsubscribeRef = useRef<(() => void) | null>(null);
+  const timerRef = useRef<number>(null);
 
   useEffect(() => {
     if (!activeDevice) return;
@@ -29,6 +32,30 @@ export const useBle = () => {
       disconnectUnsubscribeRef.current?.();
     };
   }, [activeDevice]);
+
+  useEffect(() => {
+    if (isTimerRunning) {
+      timerRef.current = setInterval(() => {
+        setTime((prevTime) => prevTime + 1);
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+
+    return () => clearInterval(timerRef.current);
+  }, [isTimerRunning]);
+
+  const formatTime = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return [
+      hours.toString().padStart(2, "0"),
+      minutes.toString().padStart(2, "0"),
+      seconds.toString().padStart(2, "0"),
+    ].join(":");
+  };
 
   const connectToDevice = async () => {
     setIsConnecting(true);
@@ -61,7 +88,11 @@ export const useBle = () => {
     bleContainer.startWorkoutMonitoring.execute(activeDevice.id, {
       onHeartRate: (heartRate) => setHeartRate(heartRate.bpm),
       onRunData: (data) => {
-        setRunningData(data);
+        if (data) {
+          setRunningData(data);
+        } else {
+          setIsTimerRunning(!isTimerRunning);
+        }
       },
     });
 
@@ -71,6 +102,7 @@ export const useBle = () => {
   const stopMonitoring = () => {
     bleContainer.startWorkoutMonitoring.stop();
     setIsMonitoring(false);
+    setIsTimerRunning(false);
   };
 
   return {
@@ -80,9 +112,12 @@ export const useBle = () => {
     heartRate,
     isMonitoring,
     runningData,
+    time,
+    isTimerRunning,
     connectToDevice,
     disconnectFromDevice,
     startMonitoring,
     stopMonitoring,
+    formatTime,
   };
 };
