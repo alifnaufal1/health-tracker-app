@@ -15,10 +15,11 @@ export const registerRequest = async (
     nick_name,
     password,
   });
-  return response.data;
+  console.info("response: ", response);
+  return response.data.data;
 };
 
-export const getProfileRequest = async () => {
-  const response = await apiClient.get("/users/me");
-  return response.data;
+export const getProfileRequest = async (userId: string) => {
+  const response = await apiClient.get(`/user/${userId}`);
+  return response.data.data;
 };

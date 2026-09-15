@@ -1,5 +1,5 @@
 import { Gauge, MapPin } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BackgroundLoading } from "../components/BackgroundLoading";
@@ -11,6 +11,7 @@ import { PlayButton } from "../components/StopButton";
 import { SyncStatusBar } from "../components/SyncStatusBar";
 import { useAuth } from "../hooks/useAuth";
 import { useBle } from "../hooks/useBle";
+import { useDevice } from "../hooks/useDevice";
 
 // TODO: replace this hardcoded object with real data from useBle() / run tracking state
 const MOCK_RUN_DATA = {
@@ -47,15 +48,21 @@ export default function DashboardScreen() {
     startMonitoring,
     stopMonitoring,
   } = useBle();
-  const { user, isLoading, register } = useAuth();
+  const { user, savedUserId, isLoading, isRestoring, register } = useAuth();
+  const { isDeviceRegistering } = useDevice(user, activeDevice);
+
+  const hasAttemptedRegister = useRef(false);
 
   const data = MOCK_RUN_DATA;
 
   useEffect(() => {
-    if (!user) {
+    if (isRestoring) return;
+
+    if (!savedUserId && !hasAttemptedRegister.current) {
+      hasAttemptedRegister.current = true;
       register("Agus Budi Cipto", "Agus", "AgusGanteng1");
     }
-  }, [user]);
+  }, []);
 
   const handleMonitorToggle = () => {
     if (isMonitoring) {
@@ -76,11 +83,17 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <>
-        {(isConnecting || isLoading) && <BackgroundLoading />}
+        {(isConnecting || isLoading || isDeviceRegistering) && (
+          <BackgroundLoading />
+        )}
         <View style={styles.container}>
           <Header
             label={
-              isTimerRunning ? formatTime(time) : user ? user.nickname : "Agus"
+              isTimerRunning
+                ? formatTime(time)
+                : user
+                  ? user.nickname
+                  : "Welcome"
             }
             isConnected={isConnected}
             isMonitoring={isMonitoring}

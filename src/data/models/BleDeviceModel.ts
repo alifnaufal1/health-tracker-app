@@ -5,18 +5,24 @@ export class BleDeviceModel {
   constructor(
     public id: string,
     public name: string | null,
-    public rssi: number | null,
-    public mtu: number,
+    public localName: string | null,
+    public manufacturerData: string | null,
   ) {}
 
   static fromDevice(device: Device): BleDeviceModel {
-    return new BleDeviceModel(device.id, device.name, device.rssi, device.mtu);
+    return new BleDeviceModel(
+      device.id,
+      device.name,
+      device.localName,
+      device.manufacturerData,
+    );
   }
 
   toEntity(): BleDevice {
     return {
       id: this.id,
       name: this.name,
+      localName: this.localName,
     };
   }
 }
