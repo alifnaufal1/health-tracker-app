@@ -1,28 +1,34 @@
 import { User } from "../../domain/entities/User";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
+import { setAuthToken } from "../datasources/api/apiClient";
 import * as userDatasource from "../datasources/api/user.datasource";
-import * as sessionDatasource from "../datasources/session.datasource";
+import * as sessionDatasource from "../datasources/local/session.datasource";
 import { UserModel } from "../models/UserModel";
 
 export class UserRepositoryImpl implements IUserRepository {
-  async login(email: string, password: string): Promise<User> {
-    const data = await userDatasource.loginRequest(email, password);
-    // setAuthToken(data.token);
+  async login(username: string, password: string): Promise<User> {
+    console.info("~~~[REPO] login().username:", username);
+    console.info("~~~[REPO] login().password:", password);
+
+    const data = await userDatasource.loginRequest(username, password);
+    console.info("~~~[REPO] login().data:", data);
+    setAuthToken(data.token);
+    await sessionDatasource.saveSession(data.user, data.token);
     return UserModel.fromJson(data.user).toEntity();
   }
 
   async register(
     name: string,
-    nick_name: string,
+    username: string,
+    nickname: string,
     password: string,
   ): Promise<User> {
     const data = await userDatasource.registerRequest(
       name,
-      nick_name,
+      username,
+      nickname,
       password,
     );
-    console.info(data);
-    // setAuthToken(data.token);
     return UserModel.fromJson(data).toEntity();
   }
 
@@ -32,18 +38,16 @@ export class UserRepositoryImpl implements IUserRepository {
   }
 
   async logout(): Promise<void> {
-    // setAuthToken(null);
+    setAuthToken(null);
+    await sessionDatasource.clearSession();
   }
 
-  async persistSession(userId: string): Promise<void> {
-    await sessionDatasource.saveUserId(userId);
-  }
+  async restoreSession(): Promise<User | null> {
+    const saved = await sessionDatasource.getSession();
+    if (!saved) return null;
 
-  async getSavedUserId(): Promise<string | null> {
-    return sessionDatasource.getUserId();
-  }
+    setAuthToken(saved.token);
 
-  async clearSession(): Promise<void> {
-    await sessionDatasource.clearUserId();
+    return saved.user;
   }
 }

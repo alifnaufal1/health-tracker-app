@@ -5,14 +5,14 @@ export class GetSavedUserId {
   constructor(private repo: IUserRepository) {}
 
   async execute(): Promise<User | null> {
-    const savedUserId = await this.repo.getSavedUserId();
-    console.info("savedUserId:", savedUserId);
-    if (!savedUserId) return null;
+    const restored = await this.repo.restoreSession();
+    if (restored === null) return null;
 
     try {
-      return await this.repo.getProfile(savedUserId);
+      const profile = await this.repo.getProfile(restored.id);
+      return profile;
     } catch {
-      await this.repo.clearSession();
+      await this.repo.logout();
       return null;
     }
   }

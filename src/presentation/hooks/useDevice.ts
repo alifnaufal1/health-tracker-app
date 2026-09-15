@@ -8,22 +8,34 @@ export const useDevice = (
   activeDevice: BleDevice | null,
 ) => {
   const [isDeviceRegistering, setIsRegistering] = useState(false);
+  const [savedDeviceId, setSavedDeviceId] = useState<string | null>(null);
+
   const alreadyRegisteredRef = useRef(false);
 
   useEffect(() => {
-    if (!user || !activeDevice) return;
+    const restore = async () => {
+      const savedUser = await deviceContainer.getSavedDevice.execute();
+      setSavedDeviceId(savedUser?.deviceId || null);
+    };
+    restore();
+  }, []);
+
+  useEffect(() => {
+    if (!user || !activeDevice || savedDeviceId) return;
     if (alreadyRegisteredRef.current) return;
 
     const register = async () => {
       setIsRegistering(true);
       try {
-        await deviceContainer.registerDevice.execute({
+        const registeredDevice = await deviceContainer.registerDevice.execute({
           deviceId: activeDevice.id,
           deviceName: activeDevice.name ?? "Unknown Device",
           manufacturerName: "Test",
           localName: activeDevice.localName ?? "Unknown Device",
           userId: user.id,
         });
+        await deviceContainer.storeSession.execute(registeredDevice.deviceId);
+        setSavedDeviceId(registeredDevice.deviceId);
         alreadyRegisteredRef.current = true;
       } catch (error) {
         console.error("Failed to register the device with the server:", error);

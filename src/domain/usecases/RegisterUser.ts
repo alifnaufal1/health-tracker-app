@@ -6,12 +6,47 @@ export class RegisterUser {
 
   async execute(
     name: string,
-    nick_name: string,
+    nickname: string,
     password: string,
+    maxRetries: number = 3,
   ): Promise<User> {
-    if (password.length < 8 && password.length > 12) {
-      throw new Error("Password length must between 8 until 12");
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const username = this.generateUsername(name);
+      try {
+        return await this.repo.register(name, username, nickname, password);
+      } catch (error) {
+        lastError = error as Error;
+        if (!this.isUsernameConflict(lastError)) {
+          throw lastError;
+        }
+      }
     }
-    return this.repo.register(name, nick_name, password);
+
+    throw (
+      lastError ?? new Error("Fail to register user after several attempts")
+    );
+  }
+
+  private generateUsername(fullName: string): string {
+    const base = fullName
+      .trim()
+      .split(/\s+/)[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    return `${base}${randomSuffix}`;
+  }
+
+  private isUsernameConflict(error: Error): boolean {
+    const message = error.message?.toLowerCase() ?? "";
+    return (
+      message.includes("username") &&
+      (message.includes("exist") ||
+        message.includes("taken") ||
+        message.includes("duplicate") ||
+        message.includes("unique"))
+    );
   }
 }

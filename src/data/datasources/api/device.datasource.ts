@@ -14,5 +14,12 @@ export const registerDeviceRequest = async (
     local_name: localName,
     user_id: userId,
   });
-  return response.data;
+  console.info("register device response:", response.data.data);
+  return response.data.data;
+};
+
+export const getDeviceRequestById = async (deviceId: string) => {
+  const response = await apiClient.get(`/device${deviceId}`);
+  console.info("get device by id response:", response.data.data);
+  return response.data.data;
 };

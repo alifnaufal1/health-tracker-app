@@ -48,7 +48,7 @@ export default function DashboardScreen() {
     startMonitoring,
     stopMonitoring,
   } = useBle();
-  const { user, savedUserId, isLoading, isRestoring, register } = useAuth();
+  const { user, isLoading, isRestoring, register } = useAuth();
   const { isDeviceRegistering } = useDevice(user, activeDevice);
 
   const hasAttemptedRegister = useRef(false);
@@ -58,11 +58,11 @@ export default function DashboardScreen() {
   useEffect(() => {
     if (isRestoring) return;
 
-    if (!savedUserId && !hasAttemptedRegister.current) {
+    if (!user?.id && !hasAttemptedRegister.current) {
       hasAttemptedRegister.current = true;
       register("Agus Budi Cipto", "Agus", "AgusGanteng1");
     }
-  }, []);
+  }, [isRestoring, user]);
 
   const handleMonitorToggle = () => {
     if (isMonitoring) {

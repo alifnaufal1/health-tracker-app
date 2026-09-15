@@ -1,21 +1,27 @@
 import { apiClient } from "./apiClient";
 
-export const loginRequest = async (email: string, password: string) => {
-  const response = await apiClient.post("/auth/login", { email, password });
-  return response.data;
+export const loginRequest = async (username: string, password: string) => {
+  const response = await apiClient.post("/auth/login", {
+    username,
+    password,
+  });
+  console.info("login response: ", response.data.data);
+  return response.data.data;
 };
 
 export const registerRequest = async (
   name: string,
-  nick_name: string,
+  username: string,
+  nickname: string,
   password: string,
 ) => {
-  const response = await apiClient.post("/user", {
+  const response = await apiClient.post("/auth/register", {
     name,
-    nick_name,
+    username,
+    nickname,
     password,
   });
-  console.info("response: ", response);
+  console.info("register user response: ", response.data.data);
   return response.data.data;
 };
 

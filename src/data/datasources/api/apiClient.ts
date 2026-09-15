@@ -3,21 +3,21 @@ import { env } from "../../../config/env";
 
 let authToken: string | null = null;
 
-// export const setAuthToken = (token: string | null) => {
-//   authToken = token;
-// };
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+};
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: env.apiBaseUrl,
   timeout: env.apiTimeoutMs,
 });
 
-// apiClient.interceptors.request.use((config) => {
-//   if (authToken) {
-//     config.headers.Authorization = `Bearer ${authToken}`;
-//   }
-//   return config;
-// });
+apiClient.interceptors.request.use((config) => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
+  }
+  return config;
+});
 
 apiClient.interceptors.response.use(
   (response) => response,
