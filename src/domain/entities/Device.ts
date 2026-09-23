@@ -3,5 +3,5 @@ export type Device = {
   deviceName: string;
   manufacturerName: string;
   localName: string;
-  userId: string;
+  userId?: string;
 };

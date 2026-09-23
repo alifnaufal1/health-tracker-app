@@ -8,7 +8,7 @@ export interface IUserRepository {
     nickname: string,
     password: string,
   ): Promise<User>;
-  getProfile(userId: string): Promise<User>;
+  getProfile(): Promise<User>;
   logout(): Promise<void>;
-  restoreSession(): Promise<User | null>;
+  restoreSession(): Promise<boolean>;
 }

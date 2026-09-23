@@ -25,7 +25,8 @@ export const registerRequest = async (
   return response.data.data;
 };
 
-export const getProfileRequest = async (userId: string) => {
-  const response = await apiClient.get(`/user/${userId}`);
+export const getProfileRequest = async () => {
+  const response = await apiClient.get("/user/me");
+  console.info("get profile request response: ", response.data.data);
   return response.data.data;
 };

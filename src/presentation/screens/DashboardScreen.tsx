@@ -58,7 +58,7 @@ export default function DashboardScreen() {
   useEffect(() => {
     if (isRestoring) return;
 
-    if (!user?.id && !hasAttemptedRegister.current) {
+    if (!user?.user_id && !hasAttemptedRegister.current) {
       hasAttemptedRegister.current = true;
       register("Agus Budi Cipto", "Agus", "AgusGanteng1");
     }
@@ -83,8 +83,12 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <>
-        {(isConnecting || isLoading || isDeviceRegistering) && (
-          <BackgroundLoading />
+        {(isConnecting || isLoading || isDeviceRegistering || isRestoring) && (
+          <BackgroundLoading
+            isRestoring={isRestoring}
+            isRegistering={isLoading}
+            isConnecting={isConnecting}
+          />
         )}
         <View style={styles.container}>
           <Header

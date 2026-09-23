@@ -6,10 +6,10 @@ export class GetSavedUserId {
 
   async execute(): Promise<User | null> {
     const restored = await this.repo.restoreSession();
-    if (restored === null) return null;
+    if (!restored) return null;
 
     try {
-      const profile = await this.repo.getProfile(restored.id);
+      const profile = await this.repo.getProfile();
       return profile;
     } catch {
       await this.repo.logout();

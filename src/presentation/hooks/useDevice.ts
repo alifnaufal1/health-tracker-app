@@ -1,3 +1,4 @@
+import { Device } from "@/domain/entities/Device";
 import { useEffect, useRef, useState } from "react";
 import { BleDevice } from "../../domain/entities/BleDevice";
 import { User } from "../../domain/entities/User";
@@ -8,20 +9,20 @@ export const useDevice = (
   activeDevice: BleDevice | null,
 ) => {
   const [isDeviceRegistering, setIsRegistering] = useState(false);
-  const [savedDeviceId, setSavedDeviceId] = useState<string | null>(null);
+  const [userDevice, setUserDevice] = useState<Device | null>(null);
 
   const alreadyRegisteredRef = useRef(false);
 
   useEffect(() => {
     const restore = async () => {
-      const savedUser = await deviceContainer.getSavedDevice.execute();
-      setSavedDeviceId(savedUser?.deviceId || null);
+      const userDevice = await deviceContainer.getUserDevice.execute();
+      setUserDevice(userDevice || null);
     };
     restore();
   }, []);
 
   useEffect(() => {
-    if (!user || !activeDevice || savedDeviceId) return;
+    if (!user || !activeDevice || userDevice) return;
     if (alreadyRegisteredRef.current) return;
 
     const register = async () => {
@@ -32,10 +33,8 @@ export const useDevice = (
           deviceName: activeDevice.name ?? "Unknown Device",
           manufacturerName: "Test",
           localName: activeDevice.localName ?? "Unknown Device",
-          userId: user.id,
         });
-        await deviceContainer.storeSession.execute(registeredDevice.deviceId);
-        setSavedDeviceId(registeredDevice.deviceId);
+        setUserDevice(registeredDevice);
         alreadyRegisteredRef.current = true;
       } catch (error) {
         console.error("Failed to register the device with the server:", error);

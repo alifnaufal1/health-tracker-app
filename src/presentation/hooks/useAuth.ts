@@ -11,7 +11,6 @@ export const useAuth = () => {
   useEffect(() => {
     const restore = async () => {
       const savedUser = await authContainer.GetSavedUserId.execute();
-
       setUser(savedUser);
       setIsRestoring(false);
     };
@@ -26,7 +25,6 @@ export const useAuth = () => {
         nickname,
         password,
       );
-      console.info("useAuth.register().registeredUser:", registeredUser);
       setUser(registeredUser);
       await login(registeredUser.username, password);
     } catch (error) {

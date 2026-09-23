@@ -1,7 +1,28 @@
-import { ActivityIndicator, StyleSheet } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-export const BackgroundLoading = () => (
-  <ActivityIndicator size="large" color="#22c55e" style={styles.overlay} />
+type BackgroundLoadingProps = {
+  isRestoring: boolean;
+  isRegistering: boolean;
+  isConnecting: boolean;
+};
+
+export const BackgroundLoading = ({
+  isRestoring,
+  isRegistering,
+  isConnecting,
+}: BackgroundLoadingProps) => (
+  <View style={styles.overlay}>
+    <ActivityIndicator size="large" color="#22c55e" />
+    <Text style={styles.text}>
+      {isRestoring
+        ? "We are looking for your data."
+        : isRegistering
+          ? "We are registering you."
+          : isConnecting
+            ? "We are connecting to your device."
+            : "Wait for seconds"}
+    </Text>
+  </View>
 );
 
 const styles = StyleSheet.create({
@@ -15,5 +36,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
+  },
+  text: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#22c55e",
   },
 });
