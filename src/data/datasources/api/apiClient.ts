@@ -3,6 +3,15 @@ import { env } from "../../../config/env";
 
 let authToken: string | null = null;
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status?: number,
+  ) {
+    super(message);
+  }
+}
+
 export const setAuthToken = (token: string | null) => {
   authToken = token;
 };
@@ -24,6 +33,6 @@ apiClient.interceptors.response.use(
   (error) => {
     const message =
       error.response?.data?.message ?? error.message ?? "Unknown API error";
-    return Promise.reject(new Error(message));
+    return Promise.reject(new ApiError(message, error.response?.status));
   },
 );

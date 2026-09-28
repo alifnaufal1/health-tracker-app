@@ -46,5 +46,5 @@ export const useDevice = (
     register();
   }, [user, activeDevice]);
 
-  return { isDeviceRegistering };
+  return { userDevice, isDeviceRegistering };
 };

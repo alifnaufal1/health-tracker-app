@@ -1,4 +1,4 @@
-import { RunData } from "@/domain/entities/RunData";
+import { Workout } from "@/domain/entities/Workout";
 import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { BleDevice } from "../../domain/entities/BleDevice";
@@ -9,7 +9,7 @@ export const useBle = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [activeDevice, setActiveDevice] = useState<BleDevice | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
-  const [runningData, setRunningData] = useState<RunData | null>(null);
+  const [runningData, setRunningData] = useState<Workout | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [time, setTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -87,7 +87,7 @@ export const useBle = () => {
 
     bleContainer.startWorkoutMonitoring.execute(activeDevice.id, {
       onHeartRate: (heartRate) => setHeartRate(heartRate.bpm),
-      onRunData: (data) => {
+      onWorkout: (data) => {
         if (data) {
           setRunningData(data);
         } else {

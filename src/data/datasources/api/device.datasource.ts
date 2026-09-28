@@ -6,7 +6,7 @@ export const registerDeviceRequest = async (
   manufacturerName: string,
   localName: string,
 ) => {
-  const response = await apiClient.post("/device", {
+  const response = await apiClient.post("/devices", {
     device_id: deviceId,
     device_name: deviceName,
     manufacturer_name: manufacturerName,
@@ -17,7 +17,7 @@ export const registerDeviceRequest = async (
 };
 
 export const getUserDeviceRequest = async () => {
-  const response = await apiClient.get("/device/me");
+  const response = await apiClient.get("/devices/me");
   console.info("get login user device response:", response.data.data);
   return response.data.data;
 };

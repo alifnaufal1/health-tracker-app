@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { Gauge, MapPin } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
@@ -33,6 +34,7 @@ const MOCK_RUN_DATA = {
 };
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const {
     isConnected,
     isConnecting,
@@ -67,6 +69,7 @@ export default function DashboardScreen() {
   const handleMonitorToggle = () => {
     if (isMonitoring) {
       stopMonitoring();
+      // router.push("/summary/w4");
     } else {
       startMonitoring();
     }
@@ -122,7 +125,7 @@ export default function DashboardScreen() {
             />
             <StatCard
               label="DISTANCE"
-              value={runningData?.distance.toString() ?? "0"}
+              value={runningData?.distanceMeters.toString() ?? "0"}
               unit={data.distance.unit}
               icon={MapPin}
             />
@@ -131,7 +134,7 @@ export default function DashboardScreen() {
           <View style={styles.row}>
             <StatCard
               label="Calories"
-              value={runningData?.calory.toString() ?? "0"}
+              value={runningData?.calories.toString() ?? "0"}
               unit={data.calories.unit}
               variant="compact"
             />

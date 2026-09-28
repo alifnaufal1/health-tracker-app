@@ -1,5 +1,5 @@
 import { HeartRate } from "../entities/HeartRate";
-import { RunData } from "../entities/RunData";
+import { Workout } from "../entities/Workout";
 import { IBleRepository } from "../repositories/IBleRepository";
 
 export class StartRunMonitoring {
@@ -11,7 +11,7 @@ export class StartRunMonitoring {
     deviceId: string,
     callbacks: {
       onHeartRate: (data: HeartRate) => void;
-      onRunData: (data: RunData | null) => void;
+      onWorkout: (data: Workout | null) => void;
     },
   ): void {
     this.unsubscribeHeartRate = this.repo.streamHeartRate(
@@ -19,12 +19,12 @@ export class StartRunMonitoring {
       callbacks.onHeartRate,
     );
 
-    this.repo.startPassiveRunMonitoring(deviceId, callbacks.onRunData);
+    this.repo.startPassiveWorkoutMonitoring(deviceId, callbacks.onWorkout);
   }
 
   stop(): void {
     this.unsubscribeHeartRate?.();
     this.unsubscribeHeartRate = null;
-    this.repo.stopPassiveRunMonitoring();
+    this.repo.stopPassiveWorkoutMonitoring();
   }
 }

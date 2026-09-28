@@ -1,6 +1,6 @@
+import { Workout } from "@/domain/entities/Workout";
 import { BleDevice } from "../../domain/entities/BleDevice";
 import { HeartRate } from "../../domain/entities/HeartRate";
-import { RunData } from "../../domain/entities/RunData";
 import { IBleRepository } from "../../domain/repositories/IBleRepository";
 import * as bleDatasource from "../datasources/ble.datasource";
 import { BleDeviceModel } from "../models/BleDeviceModel";
@@ -43,9 +43,9 @@ export class BleRepositoryImpl implements IBleRepository {
     return () => subscription.remove();
   }
 
-  startPassiveRunMonitoring(
+  startPassiveWorkoutMonitoring(
     deviceId: string,
-    onData: (data: RunData | null) => void,
+    onData: (data: Workout | null) => void,
   ): void {
     bleDatasource.startPassiveRunMonitoring(
       deviceId,
@@ -62,7 +62,7 @@ export class BleRepositoryImpl implements IBleRepository {
     );
   }
 
-  stopPassiveRunMonitoring(): void {
+  stopPassiveWorkoutMonitoring(): void {
     bleDatasource.stopPassiveRunMonitoring();
   }
 

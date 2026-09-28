@@ -1,5 +1,5 @@
+import { WorkoutData } from "@/domain/entities/Workout";
 import { Buffer } from "buffer";
-import { RunData } from "../../domain/entities/RunData";
 
 export class RunRawDataModel {
   constructor(
@@ -29,12 +29,12 @@ export class RunRawDataModel {
     );
   }
 
-  toEntity(): RunData {
+  toEntity(): WorkoutData {
     return {
       characteristicId: this.characteristicId,
       steps: this.steps,
       distance: this.distance,
-      calory: this.calory,
+      calories: this.calory,
     };
   }
 }

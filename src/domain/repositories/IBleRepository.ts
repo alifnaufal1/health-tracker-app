@@ -1,6 +1,6 @@
 import { BleDevice } from "../entities/BleDevice";
 import { HeartRate } from "../entities/HeartRate";
-import { RunData } from "../entities/RunData";
+import { Workout } from "../entities/Workout";
 
 export interface IBleRepository {
   requestPermissions(): Promise<boolean>;
@@ -14,12 +14,12 @@ export interface IBleRepository {
     onData: (heartRate: HeartRate) => void,
   ): () => void;
 
-  startPassiveRunMonitoring(
+  startPassiveWorkoutMonitoring(
     deviceId: string,
-    onData: (data: RunData | null) => void,
+    onData: (data: Workout | null) => void,
   ): void;
 
-  stopPassiveRunMonitoring(): void;
+  stopPassiveWorkoutMonitoring(): void;
 
   onDeviceDisconnected(
     deviceId: string,
