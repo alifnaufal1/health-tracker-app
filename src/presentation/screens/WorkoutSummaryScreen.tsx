@@ -7,39 +7,50 @@ import { HeartRateChart } from "../components/HeartRateChart";
 import { PaceSplitsCard } from "../components/PaceSplitsCard";
 import { StatCard } from "../components/StatCard";
 import { SummaryHeader } from "../components/SummaryHeader";
+import { useWorkoutDetail } from "../hooks/useWorkoutDetail";
+import {
+  formatDate,
+  formatDistanceKm,
+  formatDurationFlexible,
+  formatPace,
+  formatTime12Hour,
+} from "../utils/formatters";
 
 export default function WorkoutSummaryScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  const { data, error, loading } = useWorkoutDetail(id);
+  console.info("~~~WorkoutSummaryScreen.id:", id);
   const router = useRouter();
 
-  const workout = WORKOUTS.find((w) => w.id === id) ?? WORKOUTS[0];
   const isFromHistory = from === "history";
+
+  if (!data) return;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
         <SummaryHeader
           variant={isFromHistory ? "detail" : "completed"}
-          dateTimeLabel={`${workout.dateLabel}, ${workout.timeLabel}`}
+          dateTimeLabel={`${formatDate(data.startedAt)}, ${formatTime12Hour(data.startedAt)}`}
           onBackPress={() => router.back()}
         />
 
         <View style={styles.row}>
           <StatCard
             label="DISTANCE"
-            value={`${workout.distanceKm}`}
+            value={`${formatDistanceKm(data.distanceMeters)}`}
             unit="km"
             icon={MapPin}
           />
           <StatCard
             label="DURATION"
-            value={workout.durationLabel}
+            value={formatDurationFlexible(data.durationSeconds)}
             unit="min"
             icon={Timer}
           />
           <StatCard
             label="AVG PACE"
-            value={workout.avgPace}
+            value={formatPace(data.avgPaceSecPerKm)}
             unit="/km"
             icon={Gauge}
           />
@@ -48,23 +59,21 @@ export default function WorkoutSummaryScreen() {
         <View style={styles.row}>
           <StatCard
             label="TOTAL STEPS"
-            value={workout.steps.toLocaleString("en-US")}
+            value={data.steps.toLocaleString("en-US")}
             unit="steps"
           />
-          <StatCard
-            label="CALORIES"
-            value={`${workout.calories}`}
-            unit="kcal"
-          />
+          <StatCard label="CALORIES" value={`${data.calories}`} unit="kcal" />
         </View>
 
-        <HeartRateChart
-          series={workout.heartRateSeries}
-          avgBpm={workout.avgHr}
-          maxBpm={workout.maxHr}
-        />
+        {data.heartRateSeries ? (
+          <HeartRateChart
+            series={data.heartRateSeries}
+            avgBpm={data.avgHeartRate}
+            maxBpm={data.maxHeartRate}
+          />
+        ) : null}
 
-        <PaceSplitsCard splits={workout.splits} />
+        <PaceSplitsCard splits={WORKOUTS[0].splits} />
       </ScrollView>
     </SafeAreaView>
   );

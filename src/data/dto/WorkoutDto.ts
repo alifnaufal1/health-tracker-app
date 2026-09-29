@@ -1,6 +1,6 @@
 import { SplitType } from "@/domain/entities/Workout";
 
-export interface WorkoutResponse {
+export interface WorkoutDetailResponse {
   workout_data_id: string;
   workout_data_type: string;
   total_steps: number;
@@ -15,6 +15,20 @@ export interface WorkoutResponse {
   pace_splits: PaceSplitResponse[];
   started_at: string;
   ended_at: string;
+  device_id: string;
+}
+
+export interface WorkoutResponse {
+  workout_data_id: string;
+  workout_data_type: string;
+  total_steps: number;
+  total_distance: number;
+  total_calories: number;
+  avg_heart_rate: number;
+  max_heart_rate: number;
+  avg_pace: number;
+  duration: number;
+  started_at: string;
   device_id: string;
 }
 

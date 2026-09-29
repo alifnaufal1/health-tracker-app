@@ -1,6 +1,6 @@
-import { WORKOUTS } from "@/data/datasources/workout";
 import { useRouter } from "expo-router";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { Alert, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HistoryHeader } from "../components/HistoryHeader";
 import { WorkoutHistoryCard } from "../components/WorkoutHistoryCard";
@@ -10,7 +10,18 @@ import { useWorkoutHistory } from "../hooks/useWorkoutHistory";
 export default function HistoryScreen() {
   const router = useRouter();
   const { userDevice } = useDevice(null, null);
-  const { data, loading } = useWorkoutHistory(userDevice?.deviceId);
+  const { data, loading, error, refetch } = useWorkoutHistory(
+    userDevice?.deviceId,
+  );
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert("Failed to load history", error, [
+        { text: "Retry", onPress: refetch },
+        { text: "OK" },
+      ]);
+    }
+  }, [error, refetch]);
 
   console.info("History");
   console.info("userDevice:", userDevice);
@@ -19,10 +30,12 @@ export default function HistoryScreen() {
     <SafeAreaView style={styles.safeArea}>
       <FlatList
         data={data}
+        onRefresh={refetch}
+        refreshing={loading}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <HistoryHeader totalRuns={WORKOUTS.length} loading={loading} />
+          <HistoryHeader totalRuns={data.length} loading={loading} />
         }
         ItemSeparatorComponent={() => <FlatListSeparator />}
         ListEmptyComponent={() => <Text>Empty</Text>}

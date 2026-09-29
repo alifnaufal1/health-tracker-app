@@ -13,7 +13,7 @@ type WorkoutHistoryCardProps = {
   onPress: () => void;
 };
 
-export function   WorkoutHistoryCard({
+export function WorkoutHistoryCard({
   workout,
   onPress,
 }: WorkoutHistoryCardProps) {
@@ -47,7 +47,7 @@ export function   WorkoutHistoryCard({
         <Metric label="AVG HR" value={`${workout.avgHeartRate}`} unit="bpm" />
       </View>
 
-      <View style={styles.metricsRow}>
+      <View style={[styles.metricsRow, { paddingBottom: 16 }]}>
         <Metric label="STEPS" value={workout.steps.toLocaleString("en-US")} />
         <Metric label="CALORIES" value={`${workout.calories}`} unit="kcal" />
         <Text style={styles.viewRun}>VIEW RUN</Text>
@@ -78,16 +78,20 @@ function Metric({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#0f0f0f",
+    backgroundColor: "#111111",
     borderRadius: 18,
-    borderLeftWidth: 3,
-    borderLeftColor: "#22c55e",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.06)",
-    padding: 16,
     gap: 14,
   },
   topRow: {
+    borderTopRightRadius: 18,
+    borderTopLeftRadius: 18,
+    padding: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: "#22c55e",
+    borderColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -103,6 +107,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   metricsRow: {
+    paddingHorizontal: 16,
     flexDirection: "row",
     justifyContent: "space-between",
   },

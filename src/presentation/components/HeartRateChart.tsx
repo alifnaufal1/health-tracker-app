@@ -1,8 +1,13 @@
-import React from "react";
+import { HeartRatePoint } from "@/domain/entities/Workout";
 import { Heart } from "lucide-react-native";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
-import { HeartRatePoint } from "../../../data/workouts";
+import {
+  formatElapsedFromStart,
+  pickEvenlySpacedIndexes,
+  pickEvenlySpacedValues,
+} from "../utils/formatters";
 
 type HeartRateChartProps = {
   series: HeartRatePoint[];
@@ -10,22 +15,43 @@ type HeartRateChartProps = {
   maxBpm: number;
 };
 
-const CHART_WIDTH = 300;
+const CHART_WIDTH = 260; // sedikit dikurangi, beri ruang untuk label Y di kiri
 const CHART_HEIGHT = 90;
+const X_AXIS_LABEL_COUNT = 4;
+const Y_AXIS_LABEL_COUNT = 4;
+const Y_AXIS_WIDTH = 32;
 
-export function HeartRateChart({ series, avgBpm, maxBpm }: HeartRateChartProps) {
-  const bpmValues = series.map((p) => p.bpm);
+export function HeartRateChart({
+  series,
+  avgBpm,
+  maxBpm,
+}: HeartRateChartProps) {
+  if (series.length === 0) return null;
+
+  const bpmValues = series.map((p) => p.heartRate);
   const minBpm = Math.min(...bpmValues) - 10;
   const maxBpmScale = Math.max(...bpmValues) + 10;
+  const startTimestamp = series[0].timestamp;
+
+  const labeledIndexes = useMemo(
+    () =>
+      pickEvenlySpacedIndexes(series, (p) => p.timestamp, X_AXIS_LABEL_COUNT),
+    [series],
+  );
+
+  const yAxisValues = useMemo(
+    () => pickEvenlySpacedValues(minBpm, maxBpmScale, Y_AXIS_LABEL_COUNT),
+    [minBpm, maxBpmScale],
+  );
 
   const points = series.map((p, i) => {
     const x = (i / (series.length - 1)) * CHART_WIDTH;
     const y =
-      CHART_HEIGHT - ((p.bpm - minBpm) / (maxBpmScale - minBpm)) * CHART_HEIGHT;
+      CHART_HEIGHT -
+      ((p.heartRate - minBpm) / (maxBpmScale - minBpm)) * CHART_HEIGHT;
     return { x, y };
   });
 
-  // Buat smooth curve pakai quadratic bezier antar titik tengah
   let path = `M ${points[0].x} ${points[0].y}`;
   for (let i = 1; i < points.length; i++) {
     const prev = points[i - 1];
@@ -54,23 +80,49 @@ export function HeartRateChart({ series, avgBpm, maxBpm }: HeartRateChartProps) 
         </View>
       </View>
 
-      <Svg width="100%" height={CHART_HEIGHT} viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}>
-        <Defs>
-          <LinearGradient id="hrGradient" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor="#3b82f6" />
-            <Stop offset="0.5" stopColor="#22c55e" />
-            <Stop offset="1" stopColor="#ef4444" />
-          </LinearGradient>
-        </Defs>
-        <Path d={path} stroke="url(#hrGradient)" strokeWidth={2.5} fill="none" />
-      </Svg>
+      <View style={styles.chartRow}>
+        <View
+          style={[
+            styles.yAxisColumn,
+            { width: Y_AXIS_WIDTH, height: CHART_HEIGHT },
+          ]}
+        >
+          {yAxisValues.map((value, i) => (
+            <Text key={i} style={styles.yAxisLabel}>
+              {value}
+            </Text>
+          ))}
+        </View>
 
-      <View style={styles.xAxisRow}>
-        {series.map((p, i) => (
-          <Text key={i} style={styles.xAxisLabel}>
-            {p.minuteLabel}
-          </Text>
-        ))}
+        <Svg
+          width={CHART_WIDTH}
+          height={CHART_HEIGHT}
+          viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+        >
+          <Defs>
+            <LinearGradient id="hrGradient" x1="0" y1="0" x2="1" y2="0">
+              <Stop offset="0" stopColor="#3b82f6" />
+              <Stop offset="0.5" stopColor="#22c55e" />
+              <Stop offset="1" stopColor="#ef4444" />
+            </LinearGradient>
+          </Defs>
+          <Path
+            d={path}
+            stroke="url(#hrGradient)"
+            strokeWidth={2.5}
+            fill="none"
+          />
+        </Svg>
+      </View>
+
+      <View style={[styles.xAxisRow, { paddingLeft: Y_AXIS_WIDTH }]}>
+        {series.map((p, i) =>
+          labeledIndexes.has(i) ? (
+            <Text key={i} style={styles.xAxisLabel}>
+              {formatElapsedFromStart(p.timestamp, startTimestamp)}
+            </Text>
+          ) : null,
+        )}
       </View>
     </View>
   );
@@ -91,11 +143,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
-  headerLabel: { color: "#999", fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
+  headerLabel: {
+    color: "#999",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
   statsRow: { flexDirection: "row", gap: 14 },
   statBlock: { alignItems: "flex-end" },
   statLabel: { color: "#777", fontSize: 10 },
   statValue: { color: "#ef4444", fontSize: 14, fontWeight: "700" },
+  chartRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+  },
+  yAxisColumn: {
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingRight: 6,
+  },
+  yAxisLabel: { color: "#666", fontSize: 9 },
   xAxisRow: {
     flexDirection: "row",
     justifyContent: "space-between",

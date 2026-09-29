@@ -1,7 +1,6 @@
-import React from "react";
+import { PaceSplit } from "@/data/datasources/workout";
 import { BarChart2, Star } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
-import { PaceSplit } from "../../../data/workouts";
 
 type PaceSplitsCardProps = {
   splits: PaceSplit[];
@@ -48,10 +47,16 @@ export function PaceSplitsCard({ splits }: PaceSplitsCardProps) {
           <View style={[styles.paceCol, styles.paceValueRow]}>
             <Text style={styles.paceText}>{split.pace}</Text>
             {split.type !== "normal" && (
-              <Star size={11} color={TYPE_COLOR[split.type]} fill={TYPE_COLOR[split.type]} />
+              <Star
+                size={11}
+                color={TYPE_COLOR[split.type]}
+                fill={TYPE_COLOR[split.type]}
+              />
             )}
           </View>
-          <Text style={[styles.bpmText, styles.bpmCol]}>{split.avgBpm} bpm</Text>
+          <Text style={[styles.bpmText, styles.bpmCol]}>
+            {split.avgBpm} bpm
+          </Text>
         </View>
       ))}
 
@@ -83,8 +88,18 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.06)",
     padding: 16,
   },
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12 },
-  headerLabel: { color: "#999", fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  headerLabel: {
+    color: "#999",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
   tableHeaderRow: { flexDirection: "row", marginBottom: 8 },
   tableHeaderText: { color: "#666", fontSize: 9, fontWeight: "700" },
   kmCol: { width: 28 },
@@ -93,7 +108,11 @@ const styles = StyleSheet.create({
   bpmCol: { width: 56, textAlign: "right" },
   splitRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
   kmText: { color: "#ccc", fontSize: 12, fontWeight: "600" },
-  barTrack: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.06)" },
+  barTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
   barFill: { height: 6, borderRadius: 3 },
   paceValueRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   paceText: { color: "#fff", fontSize: 12, fontWeight: "700" },

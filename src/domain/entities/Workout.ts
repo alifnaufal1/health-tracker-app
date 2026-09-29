@@ -20,10 +20,10 @@ export type Workout = {
   avgHeartRate: number;
   maxHeartRate: number;
   avgPaceSecPerKm: number;
-  bestPaceSecPerKm: number;
+  bestPaceSecPerKm?: number;
   durationSeconds: number;
   startedAt: Date;
-  heartRateSeries: HeartRatePoint[];
-  paceSplits: PaceSplit[];
+  heartRateSeries?: HeartRatePoint[];
+  paceSplits?: PaceSplit[];
   deviceId: string;
 };
