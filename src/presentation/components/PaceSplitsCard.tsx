@@ -1,19 +1,21 @@
-import { PaceSplit } from "@/data/datasources/workout";
 import { BarChart2, Star } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
+import { PaceSplitViewModel } from "../viewmodels/paceSplitViewModel";
 
 type PaceSplitsCardProps = {
-  splits: PaceSplit[];
+  splitsViewModel: PaceSplitViewModel[];
 };
 
-const TYPE_COLOR: Record<PaceSplit["type"], string> = {
+const TYPE_COLOR: Record<PaceSplitViewModel["type"], string> = {
   warmup: "#3b82f6",
   fastest: "#22c55e",
   cooldown: "#f97316",
   normal: "#555",
 };
 
-export function PaceSplitsCard({ splits }: PaceSplitsCardProps) {
+export function PaceSplitsCard({
+  splitsViewModel: splits,
+}: PaceSplitsCardProps) {
   const hasHighlighted = splits.some((s) => s.type !== "normal");
 
   return (
@@ -45,7 +47,7 @@ export function PaceSplitsCard({ splits }: PaceSplitsCardProps) {
             />
           </View>
           <View style={[styles.paceCol, styles.paceValueRow]}>
-            <Text style={styles.paceText}>{split.pace}</Text>
+            <Text style={styles.paceText}>{split.paceLabel}</Text>
             {split.type !== "normal" && (
               <Star
                 size={11}

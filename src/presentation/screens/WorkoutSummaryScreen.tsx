@@ -1,6 +1,6 @@
-import { WORKOUTS } from "@/data/datasources/workout";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Gauge, MapPin, Timer } from "lucide-react-native";
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HeartRateChart } from "../components/HeartRateChart";
@@ -15,12 +15,18 @@ import {
   formatPace,
   formatTime12Hour,
 } from "../utils/formatters";
+import { toPaceSplitViewModels } from "../viewmodels/paceSplitViewModel";
 
 export default function WorkoutSummaryScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data, error, loading } = useWorkoutDetail(id);
   console.info("~~~WorkoutSummaryScreen.id:", id);
   const router = useRouter();
+
+  const splitViewModels = useMemo(
+    () => (data?.paceSplits ? toPaceSplitViewModels(data.paceSplits) : []),
+    [data?.paceSplits],
+  );
 
   const isFromHistory = from === "history";
 
@@ -73,7 +79,7 @@ export default function WorkoutSummaryScreen() {
           />
         ) : null}
 
-        <PaceSplitsCard splits={WORKOUTS[0].splits} />
+        <PaceSplitsCard splitsViewModel={splitViewModels} />
       </ScrollView>
     </SafeAreaView>
   );
