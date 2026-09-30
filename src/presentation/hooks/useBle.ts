@@ -1,6 +1,5 @@
-import { Workout } from "@/domain/entities/Workout";
+import { WorkoutSample } from "@/domain/entities/WorkoutSample";
 import { useEffect, useRef, useState } from "react";
-import { Alert } from "react-native";
 import { BleDevice } from "../../domain/entities/BleDevice";
 import { bleContainer } from "../di/bleContainer";
 
@@ -9,10 +8,11 @@ export const useBle = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [activeDevice, setActiveDevice] = useState<BleDevice | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
-  const [runningData, setRunningData] = useState<Workout | null>(null);
+  const [runningData, setRunningData] = useState<WorkoutSample | null>(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [time, setTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const disconnectUnsubscribeRef = useRef<(() => void) | null>(null);
   const timerRef = useRef<number>(null);
@@ -45,26 +45,14 @@ export const useBle = () => {
     return () => clearInterval(timerRef.current);
   }, [isTimerRunning]);
 
-  const formatTime = (totalSeconds: number) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return [
-      hours.toString().padStart(2, "0"),
-      minutes.toString().padStart(2, "0"),
-      seconds.toString().padStart(2, "0"),
-    ].join(":");
-  };
-
   const connectToDevice = async () => {
     setIsConnecting(true);
     try {
       const device = await bleContainer.connectToDevice.execute();
       setActiveDevice(device);
       setIsConnected(true);
-    } catch (error) {
-      Alert.alert("Fail to Connect", (error as Error).message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setIsConnecting(false);
     }
@@ -72,16 +60,21 @@ export const useBle = () => {
 
   const disconnectFromDevice = async () => {
     if (!activeDevice) return;
-    await bleContainer.disconnectDevice.execute(activeDevice.id);
-    setIsConnected(false);
-    setActiveDevice(null);
-    setIsMonitoring(false);
-    bleContainer.startWorkoutMonitoring.stop();
+    try {
+      await bleContainer.disconnectDevice.execute(activeDevice.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setIsConnected(false);
+      setActiveDevice(null);
+      setIsMonitoring(false);
+      bleContainer.startWorkoutMonitoring.stop();
+    }
   };
 
   const startMonitoring = () => {
     if (!activeDevice) {
-      Alert.alert("Error", "Smartwatch not connected yet!");
+      setError("Smartwatch not connected yet!");
       return;
     }
 
@@ -114,10 +107,10 @@ export const useBle = () => {
     runningData,
     time,
     isTimerRunning,
+    error,
     connectToDevice,
     disconnectFromDevice,
     startMonitoring,
     stopMonitoring,
-    formatTime,
   };
 };

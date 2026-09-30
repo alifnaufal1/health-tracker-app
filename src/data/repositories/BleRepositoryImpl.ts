@@ -1,4 +1,4 @@
-import { Workout } from "@/domain/entities/Workout";
+import { WorkoutSample } from "@/domain/entities/WorkoutSample";
 import { BleDevice } from "../../domain/entities/BleDevice";
 import { HeartRate } from "../../domain/entities/HeartRate";
 import { IBleRepository } from "../../domain/repositories/IBleRepository";
@@ -45,7 +45,7 @@ export class BleRepositoryImpl implements IBleRepository {
 
   startPassiveWorkoutMonitoring(
     deviceId: string,
-    onData: (data: Workout | null) => void,
+    onData: (data: WorkoutSample | null) => void,
   ): void {
     bleDatasource.startPassiveRunMonitoring(
       deviceId,

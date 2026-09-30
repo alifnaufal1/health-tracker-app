@@ -20,7 +20,6 @@ import { toPaceSplitViewModels } from "../viewmodels/paceSplitViewModel";
 export default function WorkoutSummaryScreen() {
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data, error, loading } = useWorkoutDetail(id);
-  console.info("~~~WorkoutSummaryScreen.id:", id);
   const router = useRouter();
 
   const splitViewModels = useMemo(

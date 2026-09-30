@@ -1,4 +1,4 @@
-import { WorkoutData } from "@/domain/entities/Workout";
+import { WorkoutSession } from "@/domain/entities/Workout";
 import { Buffer } from "buffer";
 
 export class RunRawDataModel {
@@ -29,9 +29,8 @@ export class RunRawDataModel {
     );
   }
 
-  toEntity(): WorkoutData {
+  toEntity(): WorkoutSession {
     return {
-      characteristicId: this.characteristicId,
       steps: this.steps,
       distance: this.distance,
       calories: this.calory,

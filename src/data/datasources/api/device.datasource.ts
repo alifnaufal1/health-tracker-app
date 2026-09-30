@@ -1,3 +1,5 @@
+import { DeviceDetailResponse } from "@/data/dto/DeviceDto";
+import { WebResponse } from "@/data/dto/WebResponse";
 import { apiClient } from "./apiClient";
 
 export const registerDeviceRequest = async (
@@ -17,7 +19,8 @@ export const registerDeviceRequest = async (
 };
 
 export const getUserDeviceRequest = async () => {
-  const response = await apiClient.get("/devices/me");
+  const response =
+    await apiClient.get<WebResponse<DeviceDetailResponse>>("/devices/me");
   console.info("get login user device response:", response.data.data);
   return response.data.data;
 };

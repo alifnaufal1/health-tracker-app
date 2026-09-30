@@ -1,12 +1,11 @@
+import { WorkoutSession } from "@/domain/entities/WorkoutSample";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const USER_ID_KEY = "@auth/userId";
-const SESSION_KEY = "@auth/session";
+const KEY_PREFIX = "workout_session:";
+const keyOf = (id: string) => `${KEY_PREFIX}${id}`;
 
-export const clearSession = async (): Promise<void> => {
-  await AsyncStorage.removeItem(SESSION_KEY);
-};
-
-export const clearUserId = async (): Promise<void> => {
-  await AsyncStorage.removeItem(USER_ID_KEY);
+export const saveWorkoutSession = async (
+  session: WorkoutSession,
+): Promise<void> => {
+  await AsyncStorage.setItem(keyOf(session.id), JSON.stringify(session));
 };

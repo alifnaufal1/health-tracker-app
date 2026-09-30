@@ -22,7 +22,7 @@ export const useDevice = (
   }, []);
 
   useEffect(() => {
-    if (!user || !activeDevice || userDevice) return;
+    if (user || !activeDevice || userDevice) return;
     if (alreadyRegisteredRef.current) return;
 
     const register = async () => {

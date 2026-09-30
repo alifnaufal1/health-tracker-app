@@ -13,8 +13,10 @@ import { SyncStatusBar } from "../components/SyncStatusBar";
 import { useAuth } from "../hooks/useAuth";
 import { useBle } from "../hooks/useBle";
 import { useDevice } from "../hooks/useDevice";
+import { useErrorAlert } from "../hooks/useErrorAlert";
+import { useWorkoutSession } from "../hooks/useWorkoutSession";
+import { formatTime } from "../utils/formatters";
 
-// TODO: replace this hardcoded object with real data from useBle() / run tracking state
 const MOCK_RUN_DATA = {
   elapsedLabel: "32:57",
   isConnected: true,
@@ -35,23 +37,11 @@ const MOCK_RUN_DATA = {
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const {
-    isConnected,
-    isConnecting,
-    activeDevice,
-    heartRate,
-    isMonitoring,
-    runningData,
-    time,
-    isTimerRunning,
-    formatTime,
-    connectToDevice,
-    disconnectFromDevice,
-    startMonitoring,
-    stopMonitoring,
-  } = useBle();
+  const ble = useBle();
   const { user, isLoading, isRestoring, register } = useAuth();
-  const { isDeviceRegistering } = useDevice(user, activeDevice);
+  const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
+  const { start, stop, status, errorMessage } = useWorkoutSession(ble);
+  useErrorAlert(ble.error);
 
   const hasAttemptedRegister = useRef(false);
 
@@ -67,54 +57,53 @@ export default function DashboardScreen() {
   }, [isRestoring, user]);
 
   const handleMonitorToggle = () => {
-    if (isMonitoring) {
-      stopMonitoring();
-      // router.push("/summary/w4");
-    } else {
-      startMonitoring();
-    }
+    if (ble.isMonitoring) stop();
+    else start();
   };
 
   const handleConnection = () => {
-    if (isConnected && activeDevice) {
-      disconnectFromDevice();
+    if (ble.isConnected && ble.activeDevice) {
+      ble.disconnectFromDevice();
     } else {
-      connectToDevice();
+      ble.connectToDevice();
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <>
-        {(isConnecting || isLoading || isDeviceRegistering || isRestoring) && (
+        {(ble.isConnecting ||
+          isLoading ||
+          isDeviceRegistering ||
+          isRestoring) && (
           <BackgroundLoading
             isRestoring={isRestoring}
             isRegistering={isLoading}
-            isConnecting={isConnecting}
+            isConnecting={ble.isConnecting}
           />
         )}
         <View style={styles.container}>
           <Header
             label={
-              isTimerRunning
-                ? formatTime(time)
+              ble.isTimerRunning
+                ? formatTime(ble.time)
                 : user
                   ? user.nickname
                   : "Welcome"
             }
-            isConnected={isConnected}
-            isMonitoring={isMonitoring}
+            isConnected={ble.isConnected}
+            isMonitoring={ble.isMonitoring}
             onPress={handleConnection}
           />
 
           <HeartRateCard
-            bpm={heartRate}
+            bpm={ble.heartRate}
             zoneLabel={data.heartRate.zoneLabel}
             activeBars={data.heartRate.activeBars}
             currentBarIndex={data.heartRate.currentBarIndex}
           />
 
-          <StepsCard steps={runningData?.steps} />
+          <StepsCard steps={ble.runningData?.steps} />
 
           <View style={styles.row}>
             <StatCard
@@ -125,7 +114,7 @@ export default function DashboardScreen() {
             />
             <StatCard
               label="DISTANCE"
-              value={runningData?.distanceMeters.toString() ?? "0"}
+              value={ble.runningData?.distance.toString() ?? "0"}
               unit={data.distance.unit}
               icon={MapPin}
             />
@@ -134,7 +123,7 @@ export default function DashboardScreen() {
           <View style={styles.row}>
             <StatCard
               label="Calories"
-              value={runningData?.calories.toString() ?? "0"}
+              value={ble.runningData?.calories.toString() ?? "0"}
               unit={data.calories.unit}
               variant="compact"
             />
@@ -150,7 +139,10 @@ export default function DashboardScreen() {
 
           <SyncStatusBar label={data.syncLabel} isSyncing={false} />
 
-          <PlayButton onPress={handleMonitorToggle} isPlaying={isMonitoring} />
+          <PlayButton
+            onPress={handleMonitorToggle}
+            isPlaying={ble.isMonitoring}
+          />
         </View>
       </>
     </SafeAreaView>
