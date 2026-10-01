@@ -5,8 +5,9 @@ import * as WorkoutSessionDatasource from "../datasources/local/session.datasour
 
 export class WorkoutSessionRepositoryImpl implements IWorkoutSessionRepository {
   async saveLocal(session: WorkoutSession): Promise<void> {
+    const raw = JSON.stringify(session);
     try {
-      await WorkoutSessionDatasource.saveWorkoutSession(session);
+      await WorkoutSessionDatasource.saveWorkoutSession(session.id, raw);
     } catch (error) {
       console.error("WorkoutSessionRepo.saveLocal failed", {
         sessionId: session.id,
@@ -20,16 +21,41 @@ export class WorkoutSessionRepositoryImpl implements IWorkoutSessionRepository {
       );
     }
   }
-  getActive(): Promise<WorkoutSession | null> {
-    throw new Error("Method not implemented.");
+
+  async deleteLocal(id: string): Promise<void> {
+    try {
+      await WorkoutSessionDatasource.removeWorkoutSession(id);
+    } catch (error) {
+      console.error("WorkoutSessionRepo.deleteLocal failed", {
+        sessionId: id,
+        error,
+      });
+      throw new WorkoutSessionError(
+        "DELETE_FAILED",
+        "Failed to delete local workout session",
+        error,
+      );
+    }
   }
-  getPending(): Promise<WorkoutSession[]> {
-    throw new Error("Method not implemented.");
-  }
-  upload(session: WorkoutSession): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-  markUploaded(id: string): Promise<void> {
-    throw new Error("Method not implemented.");
+
+  async upload(session: WorkoutSession): Promise<void> {
+    const payload = toWorkoutPayload(session);
+    try {
+      // await WorkoutApiDatasource.postWorkoutSession(payload);
+    } catch (error) {
+      console.warn("WorkoutSessionRepo.upload failed", {
+        sessionId: session.id,
+        error,
+      }); // Warn: kegagalan jaringan itu wajar
+      throw new WorkoutSessionError(
+        "UPLOAD_FAILED",
+        "Failed to upload workout session",
+        error,
+      );
+    }
   }
 }
+function toWorkoutPayload(session: WorkoutSession) {
+  throw new Error("Function not implemented.");
+}
+

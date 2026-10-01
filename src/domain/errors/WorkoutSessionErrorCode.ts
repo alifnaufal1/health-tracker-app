@@ -1,7 +1,6 @@
 export type WorkoutSessionErrorCode =
   | "SAVE_FAILED"
-  | "READ_FAILED"
-  | "CORRUPTED_DATA"
+  | "DELETE_FAILED"
   | "UPLOAD_FAILED";
 
 export class WorkoutSessionError extends Error {

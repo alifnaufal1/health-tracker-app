@@ -40,7 +40,8 @@ export default function DashboardScreen() {
   const ble = useBle();
   const { user, isLoading, isRestoring, register } = useAuth();
   const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
-  const { start, stop, status, errorMessage } = useWorkoutSession(ble);
+  const { start, stop, status, errorMessage, infoMessage } =
+    useWorkoutSession(ble);
   useErrorAlert(ble.error);
 
   const hasAttemptedRegister = useRef(false);

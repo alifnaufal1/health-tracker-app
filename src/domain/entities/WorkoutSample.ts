@@ -12,5 +12,6 @@ export type WorkoutSession = {
   startedAt: number;
   endedAt?: number;
   samples: WorkoutSample[];
-  status: "recording" | "pending_upload" | "uploaded";
+  status: "recording" | "pending_upload";
+  lastCheckpointAt?: number;
 };

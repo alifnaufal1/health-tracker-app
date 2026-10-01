@@ -1,26 +1,25 @@
 import { WorkoutSample, WorkoutSession } from "../entities/WorkoutSample";
 import { isWorkoutSessionError } from "../errors/WorkoutSessionErrorCode";
+import { WorkoutPolicy } from "../policies/WorkoutPolicy";
 import { IWorkoutSessionRepository } from "../repositories/IWorkoutSessionRepository";
 
 export class RecordWorkoutSample {
-  private buffer: WorkoutSample[] = [];
-  private lastSavedAt = 0;
+  constructor(
+    private repo: IWorkoutSessionRepository,
+    private policy: WorkoutPolicy,
+  ) {}
 
-  constructor(private repo: IWorkoutSessionRepository) {}
+  async execute(session: WorkoutSession, sample: WorkoutSample): Promise<void> {
+    session.samples.push(sample); // selalu dicatat di memori, tanpa throttle
 
-  async execute(
-    session: WorkoutSession,
-    sample: WorkoutSample,
-  ): Promise<boolean> {
-    session.samples.push(sample);
+    const last = session.lastCheckpointAt ?? 0;
+    if (sample.timestamp - last < this.policy.checkpointIntervalMs) return;
+    session.lastCheckpointAt = sample.timestamp; 
 
     try {
       await this.repo.saveLocal(session);
-      return true;
     } catch (error) {
-      if (isWorkoutSessionError(error, "SAVE_FAILED")) {
-        return false;
-      }
+      if (isWorkoutSessionError(error, "SAVE_FAILED")) return;
       throw error;
     }
   }

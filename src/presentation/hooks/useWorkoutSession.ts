@@ -1,16 +1,11 @@
 import { WorkoutSession } from "@/domain/entities/WorkoutSample";
 import { isWorkoutSessionError } from "@/domain/errors/WorkoutSessionErrorCode";
+import { toUserMessage } from "@/domain/errors/workoutSessionMessages";
 import { useEffect, useRef, useState } from "react";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
 import { WorkoutSessionContainer } from "../di/workoutSessionContainer";
 import { useBle } from "./useBle";
-
-const toUserMessage = (error: unknown): string => {
-  if (isWorkoutSessionError(error, "SAVE_FAILED"))
-    return "Data lari gagal disimpan di perangkat. Periksa ruang penyimpanan lalu coba lagi.";
-  return "Terjadi kesalahan tak terduga. Coba lagi.";
-};
 
 type BleState = Pick<
   ReturnType<typeof useBle>,
@@ -21,6 +16,15 @@ type BleState = Pick<
   | "stopMonitoring"
 >;
 
+type SessionStatus =
+  | "idle"
+  | "recording"
+  | "saving"
+  | "uploaded"
+  | "pending_upload"
+  | "discarded"
+  | "error";
+
 export function useWorkoutSession(ble: BleState) {
   const {
     runningData,
@@ -30,34 +34,35 @@ export function useWorkoutSession(ble: BleState) {
     stopMonitoring,
   } = ble;
   const sessionRef = useRef<WorkoutSession | null>(null);
-  const [status, setStatus] = useState<
-    "idle" | "recording" | "saving" | "uploaded" | "pending_upload" | "error"
-  >("idle");
+  const [status, setStatus] = useState<SessionStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!sessionRef.current || !runningData) return;
     const session = sessionRef.current;
+    if (!session || !runningData) return;
 
-    const record = async () => {
-      try {
-        await WorkoutSessionContainer.record.execute(session, {
-          timestamp: Date.now(),
-          steps: runningData.steps,
-          distance: runningData.distance,
-          calories: runningData.calories,
-          heartRate,
-        });
-      } catch (error) {
+    WorkoutSessionContainer.record
+      .execute(session, {
+        timestamp: Date.now(),
+        steps: runningData.steps,
+        distance: runningData.distance,
+        calories: runningData.calories,
+        heartRate,
+      })
+      .catch((error) => {
         console.error("useWorkoutSession.record unexpected", error);
-      }
-    };
-
-    record();
+      });
   }, [runningData, heartRate]);
 
-  const start = () => {
-    if (!activeDevice) return;
+  const start = async () => {
+    if (!activeDevice) {
+      setErrorMessage("Smartwatch belum terhubung.");
+      return;
+    }
+    setErrorMessage(null);
+    setInfoMessage(null);
+
     sessionRef.current = {
       id: uuidv4(),
       deviceId: activeDevice.id,
@@ -65,29 +70,47 @@ export function useWorkoutSession(ble: BleState) {
       samples: [],
       status: "recording",
     };
+
+    const started = await startMonitoring();
+    if (!started) {
+      sessionRef.current = null;
+      return;
+    }
     setStatus("recording");
-    setErrorMessage(null);
-    startMonitoring();
   };
 
   const stop = async () => {
-    stopMonitoring();
     const session = sessionRef.current;
+    sessionRef.current = null;
+    stopMonitoring();
     if (!session) return;
 
     setStatus("saving");
+    setErrorMessage(null);
+    setInfoMessage(null);
+
     try {
       const result = await WorkoutSessionContainer.finish.execute(session);
-      sessionRef.current = null;
-      setStatus(result);
+      if (result === "discarded_too_short") {
+        setStatus("discarded");
+        setInfoMessage("Data tidak disimpan karena lari terlalu singkat.");
+      } else if (result === "pending_upload") {
+        setStatus("pending_upload");
+        setInfoMessage(
+          "Data tersimpan di perangkat dan akan dikirim ulang nanti.",
+        );
+      } else {
+        setStatus("uploaded");
+      }
     } catch (error) {
+      sessionRef.current = session;
       if (!isWorkoutSessionError(error)) {
-        console.error("useWorkoutSession.stop unexpected", { error });
+        console.error("useWorkoutSession.stop unexpected", error);
       }
       setErrorMessage(toUserMessage(error));
       setStatus("error");
     }
   };
 
-  return { status, errorMessage, start, stop };
+  return { status, errorMessage, infoMessage, start, stop };
 }

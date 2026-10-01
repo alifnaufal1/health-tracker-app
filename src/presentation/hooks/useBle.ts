@@ -72,30 +72,41 @@ export const useBle = () => {
     }
   };
 
-  const startMonitoring = () => {
+  const startMonitoring = async (): Promise<boolean> => {
     if (!activeDevice) {
       setError("Smartwatch not connected yet!");
-      return;
+      return false;
     }
+    setRunningData(null);
+    setHeartRate(0);
+    setTime(0);
+    setIsTimerRunning(false);
 
-    bleContainer.startWorkoutMonitoring.execute(activeDevice.id, {
-      onHeartRate: (heartRate) => setHeartRate(heartRate.bpm),
-      onWorkout: (data) => {
-        if (data) {
-          setRunningData(data);
-        } else {
-          setIsTimerRunning(!isTimerRunning);
-        }
-      },
-    });
-
-    setIsMonitoring(true);
+    try {
+      await bleContainer.startWorkoutMonitoring.execute(activeDevice.id, {
+        onHeartRate: (hr) => setHeartRate(hr.bpm),
+        onWorkout: (data) => {
+          if (data) setRunningData(data);
+          else setIsTimerRunning((prev) => !prev);
+        },
+      });
+      setIsMonitoring(true);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+      return false;
+    }
   };
 
   const stopMonitoring = () => {
-    bleContainer.startWorkoutMonitoring.stop();
-    setIsMonitoring(false);
-    setIsTimerRunning(false);
+    try {
+      bleContainer.startWorkoutMonitoring.stop();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setIsMonitoring(false);
+      setIsTimerRunning(false);
+    }
   };
 
   return {
