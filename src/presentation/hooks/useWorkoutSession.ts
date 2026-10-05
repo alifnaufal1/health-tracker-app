@@ -1,4 +1,4 @@
-import { WorkoutSession } from "@/domain/entities/WorkoutSample";
+import { WorkoutSample, WorkoutSession } from "@/domain/entities/WorkoutSample";
 import { isWorkoutSessionError } from "@/domain/errors/WorkoutSessionErrorCode";
 import { toUserMessage } from "@/domain/errors/workoutSessionMessages";
 import { useEffect, useRef, useState } from "react";
@@ -37,27 +37,42 @@ export function useWorkoutSession(ble: BleState) {
   const [status, setStatus] = useState<SessionStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [sampleData, setSampleData] = useState<WorkoutSample | null>(null);
 
   useEffect(() => {
     const session = sessionRef.current;
-    if (!session || !runningData) return;
+    if (!runningData || !heartRate || !session) return;
+
+    const timestamp = Date.now();
+    const durationInMs = timestamp - session.startedAt;
+    const currentDistanceInM =
+      runningData.distance - (session.samples[0]?.distance ?? 0);
+
+    setSampleData({
+      timestamp: timestamp,
+      steps: runningData.steps,
+      distance: runningData.distance,
+      calories: runningData.calories,
+      heartRate,
+      pace: durationInMs / currentDistanceInM,
+    });
+  }, [runningData, heartRate]);
+
+  useEffect(() => {
+    const session = sessionRef.current;
+
+    if (!session || !sampleData) return;
 
     WorkoutSessionContainer.record
-      .execute(session, {
-        timestamp: Date.now(),
-        steps: runningData.steps,
-        distance: runningData.distance,
-        calories: runningData.calories,
-        heartRate,
-      })
+      .execute(session, sampleData)
       .catch((error) => {
         console.error("useWorkoutSession.record unexpected", error);
       });
-  }, [runningData, heartRate]);
+  }, [sampleData]);
 
   const start = async () => {
     if (!activeDevice) {
-      setErrorMessage("Smartwatch belum terhubung.");
+      setErrorMessage("Smartwatch not connected yet.");
       return;
     }
     setErrorMessage(null);
@@ -112,5 +127,5 @@ export function useWorkoutSession(ble: BleState) {
     }
   };
 
-  return { status, errorMessage, infoMessage, start, stop };
+  return { sampleData, status, errorMessage, infoMessage, start, stop };
 }

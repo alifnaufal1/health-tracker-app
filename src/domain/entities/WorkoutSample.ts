@@ -4,6 +4,7 @@ export type WorkoutSample = {
   distance: number;
   calories: number;
   heartRate?: number;
+  pace?: number;
 };
 
 export type WorkoutSession = {

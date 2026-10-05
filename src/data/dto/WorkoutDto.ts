@@ -42,3 +42,18 @@ export interface PaceSplitResponse {
   avg_heart_rate: number;
   type: SplitType;
 }
+
+export interface WorkoutPayload {
+  workout_data_type: string;
+  device_id: string;
+  workout_batch_data: WorkoutBatchData[];
+}
+
+export interface WorkoutBatchData {
+  steps: number;
+  distance: number;
+  calories: number;
+  pace: number;
+  heart_rate: number;
+  timestamp: string;
+}

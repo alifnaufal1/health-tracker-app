@@ -1,7 +1,9 @@
 import { WorkoutSession } from "@/domain/entities/WorkoutSample";
 import { WorkoutSessionError } from "@/domain/errors/WorkoutSessionErrorCode";
 import { IWorkoutSessionRepository } from "@/domain/repositories/IWorkoutSessionRepository";
+import * as WorkoutApiDatasource from "../datasources/api/workout-data.datasource";
 import * as WorkoutSessionDatasource from "../datasources/local/session.datasource";
+import { workoutMapper } from "../mappers/WorkoutMapper";
 
 export class WorkoutSessionRepositoryImpl implements IWorkoutSessionRepository {
   async saveLocal(session: WorkoutSession): Promise<void> {
@@ -39,14 +41,14 @@ export class WorkoutSessionRepositoryImpl implements IWorkoutSessionRepository {
   }
 
   async upload(session: WorkoutSession): Promise<void> {
-    const payload = toWorkoutPayload(session);
+    const payload = workoutMapper.toWorkoutPayload(session);
     try {
-      // await WorkoutApiDatasource.postWorkoutSession(payload);
+      await WorkoutApiDatasource.create(payload);
     } catch (error) {
       console.warn("WorkoutSessionRepo.upload failed", {
         sessionId: session.id,
         error,
-      }); // Warn: kegagalan jaringan itu wajar
+      });
       throw new WorkoutSessionError(
         "UPLOAD_FAILED",
         "Failed to upload workout session",
@@ -55,7 +57,3 @@ export class WorkoutSessionRepositoryImpl implements IWorkoutSessionRepository {
     }
   }
 }
-function toWorkoutPayload(session: WorkoutSession) {
-  throw new Error("Function not implemented.");
-}
-

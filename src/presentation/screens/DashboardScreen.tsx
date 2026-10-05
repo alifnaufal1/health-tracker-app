@@ -15,7 +15,7 @@ import { useBle } from "../hooks/useBle";
 import { useDevice } from "../hooks/useDevice";
 import { useErrorAlert } from "../hooks/useErrorAlert";
 import { useWorkoutSession } from "../hooks/useWorkoutSession";
-import { formatTime } from "../utils/formatters";
+import { formatPace, formatTime } from "../utils/formatters";
 
 const MOCK_RUN_DATA = {
   elapsedLabel: "32:57",
@@ -40,7 +40,7 @@ export default function DashboardScreen() {
   const ble = useBle();
   const { user, isLoading, isRestoring, register } = useAuth();
   const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
-  const { start, stop, status, errorMessage, infoMessage } =
+  const { start, stop, sampleData, status, errorMessage, infoMessage } =
     useWorkoutSession(ble);
   useErrorAlert(ble.error);
 
@@ -98,24 +98,24 @@ export default function DashboardScreen() {
           />
 
           <HeartRateCard
-            bpm={ble.heartRate}
+            bpm={sampleData?.heartRate ?? 0}
             zoneLabel={data.heartRate.zoneLabel}
             activeBars={data.heartRate.activeBars}
             currentBarIndex={data.heartRate.currentBarIndex}
           />
 
-          <StepsCard steps={ble.runningData?.steps} />
+          <StepsCard steps={sampleData?.steps} />
 
           <View style={styles.row}>
             <StatCard
               label="PACE"
-              value={data.pace.value}
+              value={formatPace(sampleData?.pace ?? 0)}
               unit={data.pace.unit}
               icon={Gauge}
             />
             <StatCard
               label="DISTANCE"
-              value={ble.runningData?.distance.toString() ?? "0"}
+              value={sampleData?.distance.toString() ?? "0"}
               unit={data.distance.unit}
               icon={MapPin}
             />
@@ -124,7 +124,7 @@ export default function DashboardScreen() {
           <View style={styles.row}>
             <StatCard
               label="Calories"
-              value={ble.runningData?.calories.toString() ?? "0"}
+              value={sampleData?.calories.toString() ?? "0"}
               unit={data.calories.unit}
               variant="compact"
             />

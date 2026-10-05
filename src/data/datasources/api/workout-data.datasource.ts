@@ -1,5 +1,9 @@
 import { WebResponse } from "../../dto/WebResponse";
-import { WorkoutDetailResponse, WorkoutResponse } from "../../dto/WorkoutDto";
+import {
+  WorkoutDetailResponse,
+  WorkoutPayload,
+  WorkoutResponse,
+} from "../../dto/WorkoutDto";
 import { apiClient } from "./apiClient";
 
 export const fetchByDeviceId = async (
@@ -17,6 +21,20 @@ export const fetchByDeviceId = async (
 export const fetchById = async (id: string): Promise<WorkoutDetailResponse> => {
   const res = await apiClient.get<WebResponse<WorkoutDetailResponse>>(
     `/workout-data/${id}`,
+  );
+  if (__DEV__) {
+    console.debug("[WorkoutDataApi] message:", res.data.message);
+  }
+  return res.data.data;
+};
+
+export const create = async (
+  payload: WorkoutPayload,
+): Promise<WorkoutResponse> => {
+  console.info("[API]~~~create().payload:", payload);
+  const res = await apiClient.post<WebResponse<WorkoutResponse>>(
+    `/devices/${payload.device_id}/workout-data`,
+    payload,
   );
   if (__DEV__) {
     console.debug("[WorkoutDataApi] message:", res.data.message);

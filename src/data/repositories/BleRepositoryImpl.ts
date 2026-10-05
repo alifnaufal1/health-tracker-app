@@ -3,9 +3,9 @@ import { BleDevice } from "../../domain/entities/BleDevice";
 import { HeartRate } from "../../domain/entities/HeartRate";
 import { IBleRepository } from "../../domain/repositories/IBleRepository";
 import * as bleDatasource from "../datasources/ble.datasource";
+import { deviceNotificationMapper } from "../mappers/DeviceNotificationMapper";
 import { BleDeviceModel } from "../models/BleDeviceModel";
 import { HeartRateModel } from "../models/HeartRateModel";
-import { RunRawDataModel } from "../models/RunRawDataModel";
 
 export class BleRepositoryImpl implements IBleRepository {
   requestPermissions(): Promise<boolean> {
@@ -47,19 +47,13 @@ export class BleRepositoryImpl implements IBleRepository {
     deviceId: string,
     onData: (data: WorkoutSample | null) => void,
   ): void {
-    bleDatasource.startPassiveRunMonitoring(
-      deviceId,
-      (characteristicId, base64Value) => {
-        onData(
-          base64Value.startsWith("/")
-            ? null
-            : RunRawDataModel.fromNotification(
-                characteristicId,
-                base64Value,
-              ).toEntity(),
-        );
-      },
-    );
+    bleDatasource.startPassiveRunMonitoring(deviceId, (_, base64Value) => {
+      onData(
+        base64Value.startsWith("/")
+          ? null
+          : deviceNotificationMapper.toEntity(base64Value),
+      );
+    });
   }
 
   stopPassiveWorkoutMonitoring(): void {

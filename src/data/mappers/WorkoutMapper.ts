@@ -1,8 +1,11 @@
 import { HeartRatePoint, PaceSplit, Workout } from "@/domain/entities/Workout";
+import { WorkoutSample, WorkoutSession } from "@/domain/entities/WorkoutSample";
 import {
   HeartRateSeriesResponse,
   PaceSplitResponse,
+  WorkoutBatchData,
   WorkoutDetailResponse,
+  WorkoutPayload,
   WorkoutResponse,
 } from "../dto/WorkoutDto";
 
@@ -53,6 +56,25 @@ export const workoutMapper = {
         this.toHeartRateSeries(d),
       ),
       deviceId: dto.device_id,
+    };
+  },
+  toBatchData(sample: WorkoutSample): WorkoutBatchData {
+    return {
+      steps: sample.steps,
+      distance: sample.distance,
+      calories: sample.calories,
+      heart_rate: sample.heartRate ?? 0,
+      pace: Math.round(sample.pace ?? 0),
+      timestamp: new Date(sample.timestamp)
+        .toISOString()
+        .replace(/\.\d+Z$/, "Z"),
+    };
+  },
+  toWorkoutPayload(session: WorkoutSession): WorkoutPayload {
+    return {
+      device_id: session.deviceId,
+      workout_data_type: "running",
+      workout_batch_data: session.samples.map((d) => this.toBatchData(d)),
     };
   },
 };

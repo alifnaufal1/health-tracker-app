@@ -10,11 +10,11 @@ export class RecordWorkoutSample {
   ) {}
 
   async execute(session: WorkoutSession, sample: WorkoutSample): Promise<void> {
-    session.samples.push(sample); // selalu dicatat di memori, tanpa throttle
+    session.samples.push(sample);
 
     const last = session.lastCheckpointAt ?? 0;
     if (sample.timestamp - last < this.policy.checkpointIntervalMs) return;
-    session.lastCheckpointAt = sample.timestamp; 
+    session.lastCheckpointAt = sample.timestamp;
 
     try {
       await this.repo.saveLocal(session);
