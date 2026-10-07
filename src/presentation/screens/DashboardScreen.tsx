@@ -15,7 +15,11 @@ import { useBle } from "../hooks/useBle";
 import { useDevice } from "../hooks/useDevice";
 import { useErrorAlert } from "../hooks/useErrorAlert";
 import { useWorkoutSession } from "../hooks/useWorkoutSession";
-import { formatPace, formatTime } from "../utils/formatters";
+import {
+  formatDistanceKm,
+  formatDurationFromSeconds,
+  formatPace,
+} from "../utils/formatters";
 
 const MOCK_RUN_DATA = {
   elapsedLabel: "32:57",
@@ -87,7 +91,7 @@ export default function DashboardScreen() {
           <Header
             label={
               ble.isTimerRunning
-                ? formatTime(ble.time)
+                ? formatDurationFromSeconds(ble.time)
                 : user
                   ? user.nickname
                   : "Welcome"
@@ -109,13 +113,13 @@ export default function DashboardScreen() {
           <View style={styles.row}>
             <StatCard
               label="PACE"
-              value={formatPace(sampleData?.pace ?? 0)}
+              value={formatPace(sampleData?.pace)}
               unit={data.pace.unit}
               icon={Gauge}
             />
             <StatCard
               label="DISTANCE"
-              value={sampleData?.distance.toString() ?? "0"}
+              value={formatDistanceKm(sampleData?.distance)}
               unit={data.distance.unit}
               icon={MapPin}
             />

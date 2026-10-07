@@ -43,7 +43,7 @@ export default function WorkoutSummaryScreen() {
         <View style={styles.row}>
           <StatCard
             label="DISTANCE"
-            value={`${formatDistanceKm(data.distanceMeters)}`}
+            value={formatDistanceKm(data.distanceMeters)}
             unit="km"
             icon={MapPin}
           />

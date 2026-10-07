@@ -12,13 +12,6 @@ export const formatTime12Hour = (date: Date): string =>
     hour12: true,
   });
 
-export const formatTimeFlexibleHour = (date: Date): string =>
-  date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-
 export const formatDurationFromSeconds = (totalSeconds: number): string => {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -41,26 +34,37 @@ export const formatDurationFlexible = (totalSeconds: number): string => {
   return formatDurationFromSeconds(totalSeconds);
 };
 
-export const formatTime = (totalSeconds: number) => {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return [
-    hours.toString().padStart(2, "0"),
-    minutes.toString().padStart(2, "0"),
-    seconds.toString().padStart(2, "0"),
-  ].join(":");
-};
-
-export const formatPace = (secPerKm: number): string => {
-  const min = Math.floor(secPerKm / 60);
-  const sec = Math.round(secPerKm % 60);
+export function formatPace(secPerKm?: number) {
+  if (isInvalidNumber(secPerKm)) {
+    return "--:--";
+  }
+  let min = Math.floor(secPerKm! / 60);
+  let sec = Math.round(secPerKm! % 60);
+  if (sec >= 60) {
+    sec = 0;
+    min++;
+  }
   return `${min}:${String(sec).padStart(2, "0")}`;
-};
+}
 
-export const formatDistanceKm = (distanceMeters: number): string =>
-  (distanceMeters / 1000).toFixed(2);
+export function formatDistanceKm(distanceMeters?: number): string {
+  if (isInvalidNumber(distanceMeters)) {
+    return "--";
+  }
+  return (distanceMeters! / 1000).toFixed(2).toString();
+}
+
+function isInvalidNumber(number?: number) {
+  if (
+    number === undefined ||
+    number < 0 ||
+    Number.isNaN(number) ||
+    number === Infinity
+  ) {
+    return true;
+  }
+  return false;
+}
 
 export const formatElapsedFromStart = (
   timestamp: Date,
