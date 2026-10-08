@@ -21,11 +21,15 @@ describe("formatPace()", () => {
   });
 
   // pace '0' shows as '0:00', this follow the habit of other run app
+  // input 0 is lower edge
+  // input 59, 60, 61 are logic transition edge
   describe("edge cases scenario", () => {
     test.each`
       secPerKm | expected
       ${0}     | ${"0:00"}
       ${59}    | ${"0:59"}
+      ${60}    | ${"1:00"}
+      ${61}    | ${"1:01"}
     `(
       "returns $expected when input is $secPerKm sec/km",
       ({ secPerKm, expected }) => {
@@ -70,34 +74,65 @@ describe("formatDistanceKm()", () => {
     test.each`
       distanceMeters | expected
       ${1000}        | ${"1.00"}
-      ${123}         | ${"0.12"}
-      ${135}         | ${"0.14"}
-      ${147}         | ${"0.15"}
-      ${159}         | ${"0.16"}
-      ${19}          | ${"0.02"}
-      ${45}          | ${"0.04"}
-      ${87}          | ${"0.09"}
-      ${1900}        | ${"1.90"}
-      ${1905}        | ${"1.91"}
-      ${1605}        | ${"1.61"}
+      ${21870}       | ${"21.87"}
+      ${500}         | ${"0.50"}
+      ${10500}       | ${"10.50"}
+      ${1234.56}     | ${"1.23"}
+      ${1235.67}     | ${"1.24"}
+      ${6037}        | ${"6.04"}
     `(
-      "returns $expected when input is $distanceMeters m",
+      "returns $expected when input is $distanceMeters meters",
       ({ distanceMeters, expected }) => {
         expect(formatDistanceKm(distanceMeters)).toBe(expected);
       },
     );
   });
-  describe("edge case scenario", () => {
+
+  // A distance of zero is considered valid data indicating a newly started running activity
+  // An input of 0.5 meters tests the two-decimal rounding limit for values ​​under 1 meter
+  describe("edge cases scenario", () => {
     test.each`
       distanceMeters | expected
-      ${135}         | ${"0.14"}
-      ${147}         | ${"0.15"}
-      ${159}         | ${"0.16"}
-      ${19}          | ${"0.02"}
-      ${45}          | ${"0.04"}
-      ${87}          | ${"0.09"}
+      ${0}           | ${"0.00"}
+      ${0.5}         | ${"0.00"}
+      ${5}           | ${"0.01"}
+      ${999}         | ${"1.00"}
+      ${1001}        | ${"1.00"}
+      ${1065}        | ${"1.07"}
+      ${1035}        | ${"1.04"}
+      ${5035}        | ${"5.04"}
+      ${10035}       | ${"10.04"}
     `(
-      "returns $expected when input is $distanceMeters m",
+      "returns $expected when input is $distanceMeters meters",
+      ({ distanceMeters, expected }) => {
+        expect(formatDistanceKm(distanceMeters)).toBe(expected);
+      },
+    );
+  });
+
+  // Negative values ​​and invalid types are returned as "--" to maintain UI consistency.
+  describe("broken scenario", () => {
+    test.each`
+      distanceMeters | expected
+      ${-1000}       | ${"--"}
+      ${NaN}         | ${"--"}
+      ${Infinity}    | ${"--"}
+      ${undefined}   | ${"--"}
+    `(
+      "returns $expected when input is $distanceMeters meters",
+      ({ distanceMeters, expected }) => {
+        expect(formatDistanceKm(distanceMeters)).toBe(expected);
+      },
+    );
+  });
+
+  describe("weird scenario", () => {
+    test.each`
+      distanceMeters | expected
+      ${1}           | ${"0.00"}
+      ${40075000}    | ${"40075.00"}
+    `(
+      "returns $expected when input is $distanceMeters meters",
       ({ distanceMeters, expected }) => {
         expect(formatDistanceKm(distanceMeters)).toBe(expected);
       },

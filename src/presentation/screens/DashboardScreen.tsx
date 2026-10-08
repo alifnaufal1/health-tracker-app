@@ -120,7 +120,7 @@ export default function DashboardScreen() {
             <StatCard
               label="DISTANCE"
               value={formatDistanceKm(sampleData?.distance)}
-              unit={data.distance.unit}
+              unit={"kilometers"}
               icon={MapPin}
             />
           </View>

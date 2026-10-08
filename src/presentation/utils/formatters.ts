@@ -51,7 +51,8 @@ export function formatDistanceKm(distanceMeters?: number): string {
   if (isInvalidNumber(distanceMeters)) {
     return "--";
   }
-  return (distanceMeters! / 1000).toFixed(2).toString();
+  const km = Math.round(distanceMeters! / 10) / 100;
+  return km.toFixed(2);
 }
 
 function isInvalidNumber(number?: number) {
