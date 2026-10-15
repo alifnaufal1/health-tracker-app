@@ -1,16 +1,16 @@
+import { genericToUserMessage } from "./general";
 import {
-  WorkoutSessionErrorCode,
   isWorkoutSessionError,
+  WorkoutSessionErrorCode,
 } from "./WorkoutSessionErrorCode";
 
 const MESSAGES: Record<WorkoutSessionErrorCode, string> = {
   SAVE_FAILED:
-    "Data lari gagal disimpan di perangkat. Periksa ruang penyimpanan lalu coba lagi.",
-  DELETE_FAILED: "Data sementara gagal dihapus dari perangkat.",
-  UPLOAD_FAILED: "Data lari gagal dikirim ke server. Akan dicoba lagi nanti.",
+    "The run data could not be saved to the device. Check your storage space and try again.",
+  DELETE_FAILED: "Temporary data failed to be deleted from the device.",
+  UPLOAD_FAILED:
+    "Run data failed to send to the server. It will be retried later.",
 };
 
 export const toUserMessage = (error: unknown): string =>
-  isWorkoutSessionError(error)
-    ? MESSAGES[error.code]
-    : "Terjadi kesalahan tak terduga. Coba lagi.";
+  genericToUserMessage(isWorkoutSessionError, MESSAGES, error);
