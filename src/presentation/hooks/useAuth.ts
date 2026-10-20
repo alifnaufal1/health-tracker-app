@@ -1,12 +1,19 @@
 import { RegisterInput } from "@/domain/entities/RegisterInput";
+import { isLoginError } from "@/domain/errors/LoginErrorCode";
 import { isRegisterError } from "@/domain/errors/RegisterErrorCode";
+import { LoginResult } from "@/domain/usecases/LoginUser";
 import { RegisterResult } from "@/domain/usecases/RegisterUser";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Alert } from "react-native";
 import { User } from "../../domain/entities/User";
 import { authContainer } from "../di/authContainer";
 import {
-  SIGN_IN_FAILED_MESSAGE,
+  INVALID_CREDENTIALS_MESSAGE,
+  LOGIN_FAILED_MESSAGE,
+  toLoginErrorMessage,
+} from "../errors/loginMessages";
+import {
+  REGISTER_FAILED_MESSAGE,
   toRegisterErrorMessage,
   USERNAME_TAKEN_MESSAGE,
 } from "../errors/registerMessages";
@@ -14,7 +21,6 @@ import {
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(true);
 
   const inFlightRef = useRef(false);
 
@@ -35,22 +41,22 @@ export function useAuth() {
     setIsLoading(true);
 
     try {
-      const result = await authContainer.RegisterUser.execute(input);
+      const res = await authContainer.RegisterUser.execute(input);
 
-      if (result.status === "signed_in") {
-        setUser(result.user);
-      } else if (result.status === "username_taken") {
+      if (res.status === "signed_in") {
+        setUser(res.user);
+      } else if (res.status === "username_taken") {
         Alert.alert("Username unavailable", USERNAME_TAKEN_MESSAGE);
       } else {
-        Alert.alert("Account created", SIGN_IN_FAILED_MESSAGE);
+        Alert.alert("Account created", REGISTER_FAILED_MESSAGE);
       }
-      return result;
+      return res;
     } catch (error) {
       if (!isRegisterError(error)) {
         console.error("useAuth.register unexpected", error);
       }
       Alert.alert(
-        isRegisterError(error) ? "Registration failed" : "Something went wrong",
+        isRegisterError(error) ? "Sign up failed" : "Something went wrong",
         toRegisterErrorMessage(error),
       );
       return null;
@@ -60,18 +66,39 @@ export function useAuth() {
     }
   };
 
-  const login = async (username: string, password: string) => {
+  const login = async (
+    username: string,
+    password: string,
+  ): Promise<LoginResult | null> => {
+    if (inFlightRef.current) return null;
+    inFlightRef.current = true;
     setIsLoading(true);
-    try {
-      const user = await authContainer.LoginUser.execute(username, password);
 
-      setUser(user);
+    try {
+      const res = await authContainer.LoginUser.execute(username, password);
+
+      if (res.status === "signed_in") {
+        setUser(res.user);
+      } else if (res.status === "invalid_credentials") {
+        Alert.alert("Wrong username or password", INVALID_CREDENTIALS_MESSAGE);
+      } else {
+        Alert.alert("Failed to sign in", LOGIN_FAILED_MESSAGE);
+      }
+      return res;
     } catch (error) {
-      Alert.alert("Failed to login", (error as Error).message);
+      if (!isLoginError(error)) {
+        console.error("useAuth.login unexpected", error);
+      }
+      Alert.alert(
+        isLoginError(error) ? "Sign in failed" : "Something went wrong",
+        toLoginErrorMessage(error),
+      );
+      return null;
     } finally {
+      inFlightRef.current = false;
       setIsLoading(false);
     }
   };
 
-  return { user, isLoading, isRestoring, register, login };
+  return { user, isLoading, register, login };
 }

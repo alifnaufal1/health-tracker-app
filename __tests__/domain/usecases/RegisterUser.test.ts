@@ -1,12 +1,14 @@
 import { User } from "@/domain/entities/User";
 import { RegisterError } from "@/domain/errors/RegisterErrorCode";
 import { IUserRepository } from "@/domain/repositories/IUserRepository";
+import { LoginUser } from "@/domain/usecases/LoginUser";
 import { RegisterUser } from "@/domain/usecases/RegisterUser";
 import { mock, MockProxy } from "jest-mock-extended";
 
 describe("RegisterUser Use Case", () => {
   let mockUserRepo: MockProxy<IUserRepository>;
   let registerUser: RegisterUser;
+  let mockLoginUser: MockProxy<LoginUser>;
 
   const validPayload = {
     name: "Agus Budi",
@@ -22,24 +24,17 @@ describe("RegisterUser Use Case", () => {
 
   beforeEach(() => {
     mockUserRepo = mock<IUserRepository>();
-    registerUser = new RegisterUser(mockUserRepo);
+    mockLoginUser = mock<LoginUser>();
+    registerUser = new RegisterUser(mockUserRepo, mockLoginUser);
   });
 
   // Aturan Bisnis 1 & Hasil: Terdaftar dan login
   it("harus mengembalikan data User jika pendaftaran berhasil", async () => {
     mockUserRepo.register.mockResolvedValue(dummyUser);
 
-    const result = await registerUser.execute(
-      validPayload.name,
-      validPayload.password,
-      validPayload.username,
-    );
+    const result = await registerUser.execute(validPayload);
 
-    expect(mockUserRepo.register).toHaveBeenCalledWith(
-      validPayload.name,
-      validPayload.username,
-      validPayload.password,
-    );
+    expect(mockUserRepo.register).toHaveBeenCalledWith(validPayload);
     expect(result).toEqual(dummyUser);
   });
 
@@ -51,17 +46,9 @@ describe("RegisterUser Use Case", () => {
     );
     mockUserRepo.register.mockRejectedValue(conflictError);
 
-    const result = await registerUser.execute(
-      validPayload.name,
-      validPayload.password,
-      validPayload.username,
-    );
+    const result = await registerUser.execute(validPayload);
 
-    expect(mockUserRepo.register).toHaveBeenCalledWith(
-      validPayload.name,
-      validPayload.username,
-      validPayload.password,
-    );
+    expect(mockUserRepo.register).toHaveBeenCalledWith(validPayload);
     expect(result).toBeNull();
   });
 
@@ -70,18 +57,10 @@ describe("RegisterUser Use Case", () => {
     const genericError = new RegisterError("REGISTER_FAILED", "");
     mockUserRepo.register.mockRejectedValue(genericError);
 
-    await expect(
-      registerUser.execute(
-        validPayload.name,
-        validPayload.password,
-        validPayload.username,
-      ),
-    ).rejects.toThrow(genericError);
-
-    expect(mockUserRepo.register).toHaveBeenCalledWith(
-      validPayload.name,
-      validPayload.username,
-      validPayload.password,
+    await expect(registerUser.execute(validPayload)).rejects.toThrow(
+      genericError,
     );
+
+    expect(mockUserRepo.register).toHaveBeenCalledWith(validPayload);
   });
 });

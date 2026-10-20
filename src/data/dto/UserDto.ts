@@ -3,3 +3,7 @@ export interface RegisterUserResponse {
   username: string;
   name: string;
 }
+export interface LoginUserResponse {
+  token: string;
+  user: RegisterUserResponse;
+}

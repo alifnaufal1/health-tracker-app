@@ -1,5 +1,6 @@
 import { RegisterInput } from "../entities/RegisterInput";
 import { User } from "../entities/User";
+import { isLoginError } from "../errors/LoginErrorCode";
 import { isRegisterError } from "../errors/RegisterErrorCode";
 import { IUserRepository } from "../repositories/IUserRepository";
 import { LoginUser } from "./LoginUser";
@@ -29,17 +30,15 @@ export class RegisterUser {
   }
 
   private async signInWithRetry(input: RegisterInput): Promise<User | null> {
-    // const credentials = { username: input.username, password: input.password };
-
-    // for (let attempt = 1; attempt <= 2; attempt++) {
-    //   try {
-    //     return await this.login.execute(credentials);
-    //   } catch (error) {
-    //     if (!isLoginError(error)) throw error; // bug: jangan disamarkan
-    //     if (isLoginError(error, "INVALID_CREDENTIALS")) return null; // diulang pun tetap salah
-    //     // kegagalan teknis: lanjut ke percobaan kedua
-    //   }
-    // }
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await this.login.execute(input.username, input.password);
+        if (res.status === "signed_in") return res.user;
+      } catch (error) {
+        if (!isLoginError(error)) throw error;
+        if (isLoginError(error, "INVALID_CREDENTIALS")) return null;
+      }
+    }
     return null;
   }
 }

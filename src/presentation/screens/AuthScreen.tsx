@@ -8,6 +8,7 @@ import {
   TextField,
   TextLink,
 } from "../components/FormComponents";
+import { useAuth } from "../hooks/useAuth";
 
 export type AuthMode = "signIn" | "signUp";
 export type AuthPreviewState =
@@ -108,17 +109,29 @@ export default function AuthScreen({
   onSwitch: () => void;
   previewState?: AuthPreviewState;
 }) {
+  const { register, login } = useAuth();
+
   const isSignIn = mode === "signIn";
   const isLoading = previewState === "loading";
   const keyboardOpen = previewState === "keyboard";
   const defaults = initialValues(mode, previewState);
+
   const [username, setUsername] = useState(defaults.username);
   const [name, setName] = useState(defaults.name);
   const [password, setPassword] = useState(defaults.password);
+
   const complete = Boolean(username && password && (isSignIn || name));
   const usernameError = !isSignIn && previewState === "usernameTaken";
   const credentialsError = isSignIn && previewState === "invalid";
   const connectionError = previewState === "connection";
+
+  const handleSignUp = async () => {
+    await register({ name, username, password });
+  };
+
+  const handleSignIn = async () => {
+    await login(username, password);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -203,7 +216,11 @@ export default function AuthScreen({
               variant="error"
             />
           )}
-          <PrimaryButton disabled={!complete} loading={isLoading}>
+          <PrimaryButton
+            disabled={!complete}
+            loading={isLoading}
+            onPress={handleSignUp}
+          >
             {isLoading
               ? isSignIn
                 ? "Signing in..."
@@ -219,7 +236,7 @@ export default function AuthScreen({
                   ? "Don't have an account? "
                   : "Already have an account? "}
               </Text>
-              <TextLink onPress={onSwitch}>
+              <TextLink onPress={isSignIn ? handleSignUp : handleSignIn}>
                 {isSignIn ? "Sign up" : "Sign in"}
               </TextLink>
             </View>
