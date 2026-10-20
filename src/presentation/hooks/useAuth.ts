@@ -1,35 +1,61 @@
-import { useEffect, useState } from "react";
+import { RegisterInput } from "@/domain/entities/RegisterInput";
+import { isRegisterError } from "@/domain/errors/RegisterErrorCode";
+import { RegisterResult } from "@/domain/usecases/RegisterUser";
+import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { User } from "../../domain/entities/User";
 import { authContainer } from "../di/authContainer";
+import {
+  SIGN_IN_FAILED_MESSAGE,
+  toRegisterErrorMessage,
+  USERNAME_TAKEN_MESSAGE,
+} from "../errors/registerMessages";
 
-export const useAuth = () => {
+export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
 
-  useEffect(() => {
-    const restore = async () => {
-      const savedUser = await authContainer.GetSavedUserId.execute();
-      setUser(savedUser);
-      setIsRestoring(false);
-    };
-    restore();
-  }, []);
+  const inFlightRef = useRef(false);
 
-  const register = async (name: string, nickname: string, password: string) => {
+  // useEffect(() => {
+  //   const restore = async () => {
+  //     const savedUser = await authContainer.GetSavedUserId.execute();
+  //     setUser(savedUser);
+  //     setIsRestoring(false);
+  //   };
+  //   restore();
+  // }, []);
+
+  const register = async (
+    input: RegisterInput,
+  ): Promise<RegisterResult | null> => {
+    if (inFlightRef.current) return null;
+    inFlightRef.current = true;
     setIsLoading(true);
+
     try {
-      const registeredUser = await authContainer.RegisterUser.execute(
-        name,
-        nickname,
-        password,
-      );
-      setUser(registeredUser);
-      await login(registeredUser.username, password);
+      const result = await authContainer.RegisterUser.execute(input);
+
+      if (result.status === "signed_in") {
+        setUser(result.user);
+      } else if (result.status === "username_taken") {
+        Alert.alert("Username unavailable", USERNAME_TAKEN_MESSAGE);
+      } else {
+        Alert.alert("Account created", SIGN_IN_FAILED_MESSAGE);
+      }
+      return result;
     } catch (error) {
-      Alert.alert("Failed to register user", (error as Error).message);
+      if (!isRegisterError(error)) {
+        console.error("useAuth.register unexpected", error);
+      }
+      Alert.alert(
+        isRegisterError(error) ? "Registration failed" : "Something went wrong",
+        toRegisterErrorMessage(error),
+      );
+      return null;
     } finally {
+      inFlightRef.current = false;
       setIsLoading(false);
     }
   };
@@ -48,4 +74,4 @@ export const useAuth = () => {
   };
 
   return { user, isLoading, isRestoring, register };
-};
+}

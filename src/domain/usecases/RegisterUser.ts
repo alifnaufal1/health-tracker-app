@@ -1,52 +1,45 @@
+import { RegisterInput } from "../entities/RegisterInput";
 import { User } from "../entities/User";
+import { isRegisterError } from "../errors/RegisterErrorCode";
 import { IUserRepository } from "../repositories/IUserRepository";
+import { LoginUser } from "./LoginUser";
+
+export type RegisterResult =
+  | { status: "signed_in"; user: User }
+  | { status: "sign_in_failed" }
+  | { status: "username_taken" };
 
 export class RegisterUser {
-  constructor(private repo: IUserRepository) {}
+  constructor(
+    private repo: IUserRepository,
+    private login: LoginUser,
+  ) {}
 
-  async execute(
-    name: string,
-    nickname: string,
-    password: string,
-    maxRetries: number = 3,
-  ): Promise<User> {
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const username = this.generateUsername(name);
-      try {
-        return await this.repo.register(name, username, nickname, password);
-      } catch (error) {
-        lastError = error as Error;
-        if (!this.isUsernameConflict(lastError)) {
-          throw lastError;
-        }
-      }
+  async execute(input: RegisterInput): Promise<RegisterResult> {
+    try {
+      await this.repo.register(input);
+    } catch (error) {
+      if (isRegisterError(error, "CONFLICT"))
+        return { status: "username_taken" };
+      throw error;
     }
 
-    throw (
-      lastError ?? new Error("Fail to register user after several attempts")
-    );
+    const user = await this.signInWithRetry(input);
+    return user ? { status: "signed_in", user } : { status: "sign_in_failed" };
   }
 
-  private generateUsername(fullName: string): string {
-    const base = fullName
-      .trim()
-      .split(/\s+/)[0]
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    return `${base}${randomSuffix}`;
-  }
+  private async signInWithRetry(input: RegisterInput): Promise<User | null> {
+    // const credentials = { username: input.username, password: input.password };
 
-  private isUsernameConflict(error: Error): boolean {
-    const message = error.message?.toLowerCase() ?? "";
-    return (
-      message.includes("username") &&
-      (message.includes("exist") ||
-        message.includes("taken") ||
-        message.includes("duplicate") ||
-        message.includes("unique"))
-    );
+    // for (let attempt = 1; attempt <= 2; attempt++) {
+    //   try {
+    //     return await this.login.execute(credentials);
+    //   } catch (error) {
+    //     if (!isLoginError(error)) throw error; // bug: jangan disamarkan
+    //     if (isLoginError(error, "INVALID_CREDENTIALS")) return null; // diulang pun tetap salah
+    //     // kegagalan teknis: lanjut ke percobaan kedua
+    //   }
+    // }
+    return null;
   }
 }

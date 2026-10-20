@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { Gauge, MapPin } from "lucide-react-native";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BackgroundLoading } from "../components/BackgroundLoading";
@@ -52,14 +52,14 @@ export default function DashboardScreen() {
 
   const data = MOCK_RUN_DATA;
 
-  useEffect(() => {
-    if (isRestoring) return;
+  // useEffect(() => {
+  //   if (isRestoring) return;
 
-    if (!user?.user_id && !hasAttemptedRegister.current) {
-      hasAttemptedRegister.current = true;
-      register("Agus Budi Cipto", "Agus", "AgusGanteng1");
-    }
-  }, [isRestoring, user]);
+  //   if (!user?.userId && !hasAttemptedRegister.current) {
+  //     hasAttemptedRegister.current = true;
+  //     register("Agus Budi Cipto", "Agus", "AgusGanteng1");
+  //   }
+  // }, [isRestoring, user]);
 
   const handleMonitorToggle = () => {
     if (ble.isMonitoring) stop();
@@ -93,7 +93,7 @@ export default function DashboardScreen() {
               ble.isTimerRunning
                 ? formatDurationFromSeconds(ble.time)
                 : user
-                  ? user.nickname
+                  ? user.name
                   : "Welcome"
             }
             isConnected={ble.isConnected}
@@ -125,20 +125,12 @@ export default function DashboardScreen() {
             />
           </View>
 
-          <View style={styles.row}>
-            <StatCard
-              label="Calories"
-              value={sampleData?.calories.toString() ?? "0"}
-              unit={data.calories.unit}
-              variant="compact"
-            />
-            <StatCard
-              label="Cadence"
-              value={data.cadence.value}
-              unit={data.cadence.unit}
-              variant="compact"
-            />
-          </View>
+          <StatCard
+            label="Calories"
+            value={sampleData?.calories.toString() ?? "0"}
+            unit={data.calories.unit}
+            variant="compact"
+          />
 
           <View style={styles.spacer} />
 

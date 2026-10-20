@@ -2,7 +2,7 @@ import { Workout } from "@/domain/entities/Workout";
 import { useCallback, useEffect, useState } from "react";
 import { WorkoutContainer } from "../di/workoutContainer";
 
-export const useWorkoutHistory = (deviceId?: string) => {
+export function useWorkoutHistory(deviceId?: string) {
   const [data, setData] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,4 +27,4 @@ export const useWorkoutHistory = (deviceId?: string) => {
   }, [fetchWorkoutHistory]);
 
   return { data, loading, error, refetch: fetchWorkoutHistory };
-};
+}

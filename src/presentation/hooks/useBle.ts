@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { BleDevice } from "../../domain/entities/BleDevice";
 import { bleContainer } from "../di/bleContainer";
 
-export const useBle = () => {
+export function useBle() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [activeDevice, setActiveDevice] = useState<BleDevice | null>(null);
@@ -124,4 +124,4 @@ export const useBle = () => {
     startMonitoring,
     stopMonitoring,
   };
-};
+}

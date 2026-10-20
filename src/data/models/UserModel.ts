@@ -14,10 +14,9 @@ export class UserModel {
 
   toEntity(): User {
     return {
-      user_id: this.user_id,
+      userId: this.user_id,
       name: this.name,
       username: this.username,
-      nickname: this.nickname,
     };
   }
 }

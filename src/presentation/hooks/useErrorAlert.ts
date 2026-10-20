@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Alert, AlertButton } from "react-native";
 
-export const useErrorAlert = (error: string | null, onRetry?: () => void) => {
+export function useErrorAlert(error: string | null, onRetry?: () => void) {
   useEffect(() => {
     if (!error) return;
     const buttons: AlertButton[] = onRetry
@@ -9,4 +9,4 @@ export const useErrorAlert = (error: string | null, onRetry?: () => void) => {
       : [{ text: "OK" }];
     Alert.alert("Something went wrong", error, buttons);
   }, [error, onRetry]);
-};
+}

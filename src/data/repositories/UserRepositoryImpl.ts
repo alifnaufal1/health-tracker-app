@@ -1,9 +1,14 @@
+import { RegisterError } from "@/domain/errors/RegisterErrorCode";
 import { User } from "../../domain/entities/User";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
 import { setAuthToken } from "../datasources/api/apiClient";
 import * as userDatasource from "../datasources/api/user.datasource";
 import * as tokenDatasource from "../datasources/local/token.datasource";
+import { RegisterUserResponse } from "../dto/UserDto";
+import { UserMapper } from "../mappers/UserMapper";
 import { UserModel } from "../models/UserModel";
+import { RegisterInput } from "@/domain/entities/RegisterInput";
+import { toHttpErrorInfo } from "../utils/httpError";
 
 export class UserRepositoryImpl implements IUserRepository {
   async login(username: string, password: string): Promise<User> {
@@ -13,19 +18,31 @@ export class UserRepositoryImpl implements IUserRepository {
     return UserModel.fromJson(data.user).toEntity();
   }
 
-  async register(
-    name: string,
-    username: string,
-    nickname: string,
-    password: string,
-  ): Promise<User> {
-    const data = await userDatasource.registerRequest(
-      name,
-      username,
-      nickname,
-      password,
-    );
-    return UserModel.fromJson(data).toEntity();
+  async register(input: RegisterInput): Promise<User> {
+    let dto: RegisterUserResponse;
+    try {
+      dto = await userDatasource.registerRequest(input);
+    } catch (error) {
+      const info = toHttpErrorInfo(error);
+
+      if (info.status === 409) {
+        console.warn("UserRepo.register conflict", {
+          username: input.username,
+        });
+        throw new RegisterError("CONFLICT", "Username already taken", info);
+      }
+
+      console.error("UserRepo.register failed", {
+        username: input.username,
+        ...info,
+      });
+      throw new RegisterError(
+        "REGISTER_FAILED",
+        "Failed to register this user",
+        info,
+      );
+    }
+    return UserMapper.toEntity(dto);
   }
 
   async getProfile(): Promise<User> {

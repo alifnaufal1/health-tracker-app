@@ -23,9 +23,6 @@ export default function HistoryScreen() {
     }
   }, [error, refetch]);
 
-  console.info("History");
-  console.info("userDevice:", userDevice);
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList

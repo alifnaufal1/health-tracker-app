@@ -4,10 +4,7 @@ import { BleDevice } from "../../domain/entities/BleDevice";
 import { User } from "../../domain/entities/User";
 import { deviceContainer } from "../di/deviceContainer";
 
-export const useDevice = (
-  user: User | null,
-  activeDevice: BleDevice | null,
-) => {
+export function useDevice(user: User | null, activeDevice: BleDevice | null) {
   const [isDeviceRegistering, setIsRegistering] = useState(false);
   const [userDevice, setUserDevice] = useState<Device | null>(null);
 
@@ -47,4 +44,4 @@ export const useDevice = (
   }, [user, activeDevice]);
 
   return { userDevice, isDeviceRegistering };
-};
+}

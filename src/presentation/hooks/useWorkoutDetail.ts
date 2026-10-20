@@ -2,7 +2,7 @@ import { Workout } from "@/domain/entities/Workout";
 import { useEffect, useState } from "react";
 import { WorkoutContainer } from "../di/workoutContainer";
 
-export const useWorkoutDetail = (workoutId?: string) => {
+export function useWorkoutDetail(workoutId?: string) {
   const [data, setData] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,4 +27,4 @@ export const useWorkoutDetail = (workoutId?: string) => {
   }, [workoutId]);
 
   return { data, loading, error };
-};
+}
