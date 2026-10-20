@@ -39,10 +39,10 @@ export function HeartRateCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#0f0f0f",
+    backgroundColor: "#111111",
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderWidth: 2,
+    borderColor: "#1e1e1e",
     padding: 18,
   },
   headerRow: {

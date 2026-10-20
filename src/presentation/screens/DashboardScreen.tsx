@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BackgroundLoading } from "../components/BackgroundLoading";
 import { Header } from "../components/Header";
 import { HeartRateCard } from "../components/HeartRateCard";
+import { SignCard } from "../components/SignCard";
 import { StatCard } from "../components/StatCard";
 import { StepsCard } from "../components/Stepscard";
 import { PlayButton } from "../components/StopButton";
@@ -42,7 +43,7 @@ const MOCK_RUN_DATA = {
 export default function DashboardScreen() {
   const router = useRouter();
   const ble = useBle();
-  const { user, isLoading, isRestoring, register } = useAuth();
+  const { user, isLoading } = useAuth();
   const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
   const { start, stop, sampleData, status, errorMessage, infoMessage } =
     useWorkoutSession(ble);
@@ -77,12 +78,9 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <>
-        {(ble.isConnecting ||
-          isLoading ||
-          isDeviceRegistering ||
-          isRestoring) && (
+        {(ble.isConnecting || isLoading || isDeviceRegistering) && (
           <BackgroundLoading
-            isRestoring={isRestoring}
+            isRestoring={false}
             isRegistering={isLoading}
             isConnecting={ble.isConnecting}
           />
@@ -100,6 +98,8 @@ export default function DashboardScreen() {
             isMonitoring={ble.isMonitoring}
             onPress={handleConnection}
           />
+
+          {!user && <SignCard />}
 
           <HeartRateCard
             bpm={sampleData?.heartRate ?? 0}
@@ -149,7 +149,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: "#0D0D0D",
   },
   container: {
     flex: 1,

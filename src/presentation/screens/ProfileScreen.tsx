@@ -64,7 +64,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#000" },
+  safeArea: { flex: 1, backgroundColor: "#0D0D0D" },
   content: {
     paddingHorizontal: 20,
     paddingTop: 12,
