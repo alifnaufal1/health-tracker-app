@@ -1,3 +1,4 @@
+import { Auth } from "@/domain/entities/Auth";
 import { RegisterInput } from "@/domain/entities/RegisterInput";
 import { LoginError } from "@/domain/errors/LoginErrorCode";
 import { RegisterError } from "@/domain/errors/RegisterErrorCode";
@@ -7,12 +8,13 @@ import { setAuthToken } from "../datasources/api/apiClient";
 import * as userDatasource from "../datasources/api/user.datasource";
 import * as tokenDatasource from "../datasources/local/token.datasource";
 import { LoginUserResponse, RegisterUserResponse } from "../dto/UserDto";
+import { AuthMapper } from "../mappers/AuthMapper";
 import { UserMapper } from "../mappers/UserMapper";
 import { UserModel } from "../models/UserModel";
 import { toHttpErrorInfo } from "../utils/httpError";
 
 export class UserRepositoryImpl implements IUserRepository {
-  async login(username: string, password: string): Promise<User> {
+  async login(username: string, password: string): Promise<Auth> {
     let dto: LoginUserResponse;
     try {
       dto = await userDatasource.loginRequest(username, password);
@@ -23,7 +25,7 @@ export class UserRepositoryImpl implements IUserRepository {
         console.warn("UserRepo.login invalid", username);
         throw new LoginError(
           "INVALID_CREDENTIALS",
-          "Username already taken",
+          "The password or email/username entered does not match",
           info,
         );
       }
@@ -32,12 +34,9 @@ export class UserRepositoryImpl implements IUserRepository {
         username,
         ...info,
       });
-      throw new LoginError("LOGIN_FAILED", "Failed to sign in this user", info);
+      throw new LoginError("LOGIN_FAILED", "Failed to sign in", info);
     }
-    const data = await userDatasource.loginRequest(username, password);
-    await tokenDatasource.saveToken(data.token);
-    setAuthToken(data.token);
-    return UserModel.fromJson(data.user).toEntity();
+    return AuthMapper.toEntity(dto);
   }
 
   async register(input: RegisterInput): Promise<User> {
