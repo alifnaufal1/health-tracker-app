@@ -10,6 +10,6 @@ export const getToken = async (): Promise<string | null> => {
   return SecureStore.getItemAsync(TOKEN_KEY);
 };
 
-export const clearToken = async (): Promise<void> => {
+export const removeToken = async (): Promise<void> => {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 };

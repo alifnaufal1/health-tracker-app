@@ -16,6 +16,7 @@ import { useBle } from "../hooks/useBle";
 import { useDevice } from "../hooks/useDevice";
 import { useErrorAlert } from "../hooks/useErrorAlert";
 import { useWorkoutSession } from "../hooks/useWorkoutSession";
+import { useAuthStore } from "../stores/authStore";
 import {
   formatDistanceKm,
   formatDurationFromSeconds,
@@ -45,9 +46,10 @@ export default function DashboardScreen() {
   const ble = useBle();
   const { user, isLoading } = useAuth();
   const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
-  const { start, stop, sampleData, status, errorMessage, infoMessage } =
+  const { start, stop, sampleData, errorMessage, infoMessage } =
     useWorkoutSession(ble);
   useErrorAlert(ble.error);
+  const auth = useAuthStore((s) => s.auth);
 
   const hasAttemptedRegister = useRef(false);
 
@@ -99,7 +101,8 @@ export default function DashboardScreen() {
             onPress={handleConnection}
           />
 
-          {!user && <SignCard />}
+          {auth.status === "signed_out" && <SignCard />}
+          {/* {auth.status === "signed_in" && <Text>Hello, {auth.user.name}</Text>} */}
 
           <HeartRateCard
             bpm={sampleData?.heartRate ?? 0}

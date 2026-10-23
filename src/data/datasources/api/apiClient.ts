@@ -21,6 +21,7 @@ export const apiClient: AxiosInstance = axios.create({
   timeout: env.apiTimeoutMs,
 });
 
+
 apiClient.interceptors.request.use((config) => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
@@ -28,11 +29,26 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+let onUnauthorized: (() => void) | null = null;
+export const setUnauthorizedHandler = (handler: (() => void) | null) => {
+  onUnauthorized = handler;
+};
+
 apiClient.interceptors.response.use(
-  (response) => response,
+  (res) => res,
   (error) => {
-    const message =
-      error.response?.data?.message ?? error.message ?? "Unknown API error";
-    return Promise.reject(new ApiError(message, error.response?.status));
+    const isAuthEndpoint = error.config?.url?.startsWith("/auth/");
+    if (
+      axios.isAxiosError(error) &&
+      error.response?.status === 401 &&
+      !isAuthEndpoint
+    ) {
+      onUnauthorized?.();
+    } else {
+      const message =
+        error.response?.data?.message ?? error.message ?? "Unknown API error";
+      return Promise.reject(new ApiError(message, error.response?.status));
+    }
+    // return Promise.reject(error);
   },
 );

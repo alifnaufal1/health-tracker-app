@@ -73,7 +73,7 @@ export class UserRepositoryImpl implements IUserRepository {
 
   async logout(): Promise<void> {
     setAuthToken(null);
-    await tokenDatasource.clearToken();
+    await tokenDatasource.removeToken();
   }
 
   async restoreSession(): Promise<boolean> {

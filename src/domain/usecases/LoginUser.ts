@@ -2,7 +2,7 @@ import { Auth } from "../entities/Auth";
 import { User } from "../entities/User";
 import { isAuthSessionError } from "../errors/AuthSessionErrorCode";
 import { isLoginError } from "../errors/LoginErrorCode";
-import { IAuthSessionRepository } from "../repositories/IAuthSessionRepository";
+import { ISessionRepository } from "../repositories/ISessionRepository";
 import { IUserRepository } from "../repositories/IUserRepository";
 
 export type LoginResult =
@@ -13,7 +13,7 @@ export type LoginResult =
 export class LoginUser {
   constructor(
     private repo: IUserRepository,
-    private authSessionRepo: IAuthSessionRepository,
+    private sessionRepo: ISessionRepository,
   ) {}
 
   async execute(username: string, password: string): Promise<LoginResult> {
@@ -21,7 +21,7 @@ export class LoginUser {
     try {
       auth = await this.repo.login(username, password);
       if (auth.token) {
-        await this.authSessionRepo.saveToken(auth.token);
+        await this.sessionRepo.save(auth);
       }
     } catch (error) {
       if (isLoginError(error, "INVALID_CREDENTIALS")) {
