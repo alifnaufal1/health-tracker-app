@@ -19,14 +19,18 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "HOME",
-          tabBarIcon: ({ color, size }) => <PersonStanding color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <PersonStanding color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: "HISTORY",
-          tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => (
+            <History color={color} size={size} />
+          ),
         }}
       />
       <Tabs.Screen

@@ -1,14 +1,9 @@
 import { Auth } from "../entities/Auth";
-import { User } from "../entities/User";
+import { LoginResult } from "../entities/User";
 import { isAuthSessionError } from "../errors/AuthSessionErrorCode";
 import { isLoginError } from "../errors/LoginErrorCode";
 import { ISessionRepository } from "../repositories/ISessionRepository";
 import { IUserRepository } from "../repositories/IUserRepository";
-
-export type LoginResult =
-  | { status: "signed_in"; user: User }
-  | { status: "sign_in_failed" }
-  | { status: "invalid_credentials" };
 
 export class LoginUser {
   constructor(

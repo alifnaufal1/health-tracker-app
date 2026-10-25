@@ -22,17 +22,19 @@ export default function RootLayout() {
   }, [status]);
 
   if (status === "checking") return null;
+
+  const isSignedIn = status === "signed_in";
+
   return (
     <>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen
-          name="explore"
-          options={{
-            title: "Workout History",
-          }}
-        />
+        <Stack.Protected guard={true}>
+          {/* <Stack.Screen name="index" /> */}
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="auth/signin" />
+          <Stack.Screen name="auth/signup" />
+        </Stack.Protected>
       </Stack>
     </>
   );

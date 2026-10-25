@@ -10,7 +10,6 @@ import { SignCard } from "../components/SignCard";
 import { StatCard } from "../components/StatCard";
 import { StepsCard } from "../components/Stepscard";
 import { PlayButton } from "../components/StopButton";
-import { SyncStatusBar } from "../components/SyncStatusBar";
 import { useAuth } from "../hooks/useAuth";
 import { useBle } from "../hooks/useBle";
 import { useDevice } from "../hooks/useDevice";
@@ -102,7 +101,6 @@ export default function DashboardScreen() {
           />
 
           {auth.status === "signed_out" && <SignCard />}
-          {/* {auth.status === "signed_in" && <Text>Hello, {auth.user.name}</Text>} */}
 
           <HeartRateCard
             bpm={sampleData?.heartRate ?? 0}
@@ -129,15 +127,13 @@ export default function DashboardScreen() {
           </View>
 
           <StatCard
-            label="Calories"
+            label="CALORIES"
             value={sampleData?.calories.toString() ?? "0"}
             unit={data.calories.unit}
             variant="compact"
           />
 
           <View style={styles.spacer} />
-
-          <SyncStatusBar label={data.syncLabel} isSyncing={false} />
 
           <PlayButton
             onPress={handleMonitorToggle}

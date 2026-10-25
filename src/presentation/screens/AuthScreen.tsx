@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -53,51 +54,6 @@ function StackHeader({ onBack, title }: { onBack: () => void; title: string }) {
   );
 }
 
-function KeyboardPreview() {
-  const rows = [
-    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-    ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-    ["⇧", "Z", "X", "C", "V", "B", "N", "M", "⌫"],
-  ];
-
-  return (
-    <View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      pointerEvents="none"
-      style={styles.keyboard}
-    >
-      {rows.map((row, rowIndex) => (
-        <View key={rowIndex} style={styles.keyboardRow}>
-          {row.map((key) => (
-            <View
-              key={key}
-              style={[
-                styles.key,
-                {
-                  width:
-                    rowIndex === 2 && (key === "⇧" || key === "⌫") ? 48 : 31,
-                },
-              ]}
-            >
-              <Text style={styles.keyText}>{key}</Text>
-            </View>
-          ))}
-        </View>
-      ))}
-      <View style={styles.keyboardBottomRow}>
-        <View style={[styles.key, { width: 78 }]}>
-          <Text style={[styles.keyText, styles.keyTextSmall]}>123</Text>
-        </View>
-        <View style={[styles.key, { flex: 1 }]} />
-        <View style={[styles.key, styles.returnKey, { width: 78 }]}>
-          <Text style={[styles.keyText, styles.returnKeyText]}>return</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 export default function AuthScreen({
   mode,
   onBack,
@@ -109,10 +65,12 @@ export default function AuthScreen({
   onSwitch: () => void;
   previewState?: AuthPreviewState;
 }) {
-  const { register, login } = useAuth();
+  const router = useRouter();
+
+  const { isLoading, register, login } = useAuth();
 
   const isSignIn = mode === "signIn";
-  const isLoading = previewState === "loading";
+  // const isLoading = previewState === "loading";
   const keyboardOpen = previewState === "keyboard";
   const defaults = initialValues(mode, previewState);
 
@@ -219,7 +177,7 @@ export default function AuthScreen({
           <PrimaryButton
             disabled={!complete}
             loading={isLoading}
-            onPress={handleSignUp}
+            onPress={isSignIn ? handleSignIn : handleSignUp}
           >
             {isLoading
               ? isSignIn
@@ -243,7 +201,6 @@ export default function AuthScreen({
           )}
         </View>
       </ScrollView>
-      {keyboardOpen && <KeyboardPreview />}
     </SafeAreaView>
   );
 }
@@ -310,54 +267,5 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 12,
     textAlign: "center",
-  },
-
-  // KeyboardPreview
-  keyboard: {
-    backgroundColor: "#171717",
-    borderTopColor: "#292929",
-    borderTopWidth: 1,
-    bottom: 0,
-    height: 300,
-    left: 0,
-    paddingBottom: 8,
-    paddingHorizontal: 7,
-    paddingTop: 12,
-    position: "absolute",
-    right: 0,
-    zIndex: 4,
-  },
-  keyboardRow: {
-    flexDirection: "row",
-    gap: 5,
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  keyboardBottomRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 2,
-  },
-  key: {
-    alignItems: "center",
-    backgroundColor: "#303030",
-    borderRadius: 6,
-    height: 42,
-    justifyContent: "center",
-  },
-  keyText: {
-    color: "#d0d0d0",
-    fontSize: 12,
-  },
-  keyTextSmall: {
-    color: "#aaa",
-    fontSize: 11,
-  },
-  returnKey: {
-    backgroundColor: "#29633e",
-  },
-  returnKeyText: {
-    color: "#d8eadf",
-    fontSize: 11,
   },
 });

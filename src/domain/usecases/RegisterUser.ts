@@ -1,14 +1,9 @@
 import { RegisterInput } from "../entities/RegisterInput";
-import { User } from "../entities/User";
+import { RegisterResult, User } from "../entities/User";
 import { isLoginError } from "../errors/LoginErrorCode";
 import { isRegisterError } from "../errors/RegisterErrorCode";
 import { IUserRepository } from "../repositories/IUserRepository";
 import { LoginUser } from "./LoginUser";
-
-export type RegisterResult =
-  | { status: "signed_in"; user: User }
-  | { status: "sign_in_failed" }
-  | { status: "username_taken" };
 
 export class RegisterUser {
   constructor(

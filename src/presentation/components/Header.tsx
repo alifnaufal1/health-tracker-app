@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useAuthStore } from "../stores/authStore";
 import { ConnectionBadge } from "./ConnectionBadge";
 
 type HeaderProps = {
@@ -14,12 +15,16 @@ export function Header({
   isMonitoring,
   onPress,
 }: HeaderProps) {
+  const auth = useAuthStore((s) => s.auth);
+
   return (
     <View style={styles.container}>
       <View>
-        <Text style={styles.eyebrow}>
-          {isMonitoring ? "ACTIVE RUN" : "Hello,"}
-        </Text>
+        {auth.status === "signed_in" && (
+          <Text style={styles.eyebrow}>
+            {isMonitoring ? "ACTIVE RUN" : "Hello,"}
+          </Text>
+        )}
         <Text style={styles.timer}>{label}</Text>
       </View>
       <Pressable onPress={onPress}>

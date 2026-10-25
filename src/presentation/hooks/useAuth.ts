@@ -1,11 +1,9 @@
 import { RegisterInput } from "@/domain/entities/RegisterInput";
 import { isLoginError } from "@/domain/errors/LoginErrorCode";
 import { isRegisterError } from "@/domain/errors/RegisterErrorCode";
-import { LoginResult } from "@/domain/usecases/LoginUser";
-import { RegisterResult } from "@/domain/usecases/RegisterUser";
 import { useRef, useState } from "react";
 import { Alert } from "react-native";
-import { User } from "../../domain/entities/User";
+import { LoginResult, RegisterResult, User } from "../../domain/entities/User";
 import { authContainer } from "../di/authContainer";
 import {
   INVALID_CREDENTIALS_MESSAGE,
@@ -17,21 +15,13 @@ import {
   toRegisterErrorMessage,
   USERNAME_TAKEN_MESSAGE,
 } from "../errors/registerMessages";
+import { useAuthStore } from "../stores/authStore";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const inFlightRef = useRef(false);
-
-  // useEffect(() => {
-  //   const restore = async () => {
-  //     const savedUser = await authContainer.GetSavedUserId.execute();
-  //     setUser(savedUser);
-  //     setIsRestoring(false);
-  //   };
-  //   restore();
-  // }, []);
 
   const register = async (
     input: RegisterInput,
@@ -45,6 +35,9 @@ export function useAuth() {
 
       if (res.status === "signed_in") {
         setUser(res.user);
+        useAuthStore.setState({
+          auth: { status: "signed_in", user: res.user },
+        });
       } else if (res.status === "username_taken") {
         Alert.alert("Username unavailable", USERNAME_TAKEN_MESSAGE);
       } else {
@@ -79,6 +72,9 @@ export function useAuth() {
 
       if (res.status === "signed_in") {
         setUser(res.user);
+        useAuthStore.setState({
+          auth: { status: "signed_in", user: res.user },
+        });
       } else if (res.status === "invalid_credentials") {
         Alert.alert("Wrong username or password", INVALID_CREDENTIALS_MESSAGE);
       } else {
