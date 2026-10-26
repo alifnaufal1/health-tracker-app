@@ -4,7 +4,6 @@ import { LoginError } from "@/domain/errors/LoginErrorCode";
 import { RegisterError } from "@/domain/errors/RegisterErrorCode";
 import { User } from "../../domain/entities/User";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
-import { setAuthToken } from "../datasources/api/apiClient";
 import * as userDatasource from "../datasources/api/user.datasource";
 import * as tokenDatasource from "../datasources/local/token.datasource";
 import { LoginUserResponse, RegisterUserResponse } from "../dto/UserDto";
@@ -72,7 +71,6 @@ export class UserRepositoryImpl implements IUserRepository {
   }
 
   async logout(): Promise<void> {
-    setAuthToken(null);
     await tokenDatasource.removeToken();
   }
 
@@ -81,7 +79,6 @@ export class UserRepositoryImpl implements IUserRepository {
     console.info("token:", token);
     if (!token) return false;
 
-    setAuthToken(token);
     return true;
   }
 }

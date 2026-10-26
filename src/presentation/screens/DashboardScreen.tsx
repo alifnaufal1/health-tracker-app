@@ -12,7 +12,6 @@ import { StepsCard } from "../components/Stepscard";
 import { PlayButton } from "../components/StopButton";
 import { useAuth } from "../hooks/useAuth";
 import { useBle } from "../hooks/useBle";
-import { useDevice } from "../hooks/useDevice";
 import { useErrorAlert } from "../hooks/useErrorAlert";
 import { useWorkoutSession } from "../hooks/useWorkoutSession";
 import { useAuthStore } from "../stores/authStore";
@@ -43,8 +42,8 @@ const MOCK_RUN_DATA = {
 export default function DashboardScreen() {
   const router = useRouter();
   const ble = useBle();
-  const { user, isLoading } = useAuth();
-  const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
+  const { isLoading } = useAuth();
+  // const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
   const { start, stop, sampleData, errorMessage, infoMessage } =
     useWorkoutSession(ble);
   useErrorAlert(ble.error);
@@ -79,7 +78,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <>
-        {(ble.isConnecting || isLoading || isDeviceRegistering) && (
+        {(ble.isConnecting || isLoading) && (
           <BackgroundLoading
             isRestoring={false}
             isRegistering={isLoading}
@@ -91,8 +90,8 @@ export default function DashboardScreen() {
             label={
               ble.isTimerRunning
                 ? formatDurationFromSeconds(ble.time)
-                : user
-                  ? user.name
+                : auth.status === "signed_in"
+                  ? auth.user.username
                   : "Welcome"
             }
             isConnected={ble.isConnected}

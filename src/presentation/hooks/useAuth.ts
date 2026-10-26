@@ -3,7 +3,7 @@ import { isLoginError } from "@/domain/errors/LoginErrorCode";
 import { isRegisterError } from "@/domain/errors/RegisterErrorCode";
 import { useRef, useState } from "react";
 import { Alert } from "react-native";
-import { LoginResult, RegisterResult, User } from "../../domain/entities/User";
+import { LoginResult, RegisterResult } from "../../domain/entities/User";
 import { authContainer } from "../di/authContainer";
 import {
   INVALID_CREDENTIALS_MESSAGE,
@@ -18,7 +18,6 @@ import {
 import { useAuthStore } from "../stores/authStore";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const inFlightRef = useRef(false);
@@ -34,7 +33,6 @@ export function useAuth() {
       const res = await authContainer.RegisterUser.execute(input);
 
       if (res.status === "signed_in") {
-        setUser(res.user);
         useAuthStore.setState({
           auth: { status: "signed_in", user: res.user },
         });
@@ -71,7 +69,6 @@ export function useAuth() {
       const res = await authContainer.LoginUser.execute(username, password);
 
       if (res.status === "signed_in") {
-        setUser(res.user);
         useAuthStore.setState({
           auth: { status: "signed_in", user: res.user },
         });
@@ -96,5 +93,5 @@ export function useAuth() {
     }
   };
 
-  return { user, isLoading, register, login };
+  return { isLoading, register, login };
 }

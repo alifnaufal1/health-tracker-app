@@ -29,9 +29,10 @@ export default function RootLayout() {
     <>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Protected guard={true}>
-          {/* <Stack.Screen name="index" /> */}
+        <Stack.Protected guard={isSignedIn}>
           <Stack.Screen name="(tabs)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!isSignedIn}>
           <Stack.Screen name="auth/signin" />
           <Stack.Screen name="auth/signup" />
         </Stack.Protected>

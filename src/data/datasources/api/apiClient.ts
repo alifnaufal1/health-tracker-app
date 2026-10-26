@@ -1,7 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { env } from "../../../config/env";
-
-let authToken: string | null = null;
+import { getToken } from "../local/token.datasource";
 
 export class ApiError extends Error {
   constructor(
@@ -12,17 +11,13 @@ export class ApiError extends Error {
   }
 }
 
-export const setAuthToken = (token: string | null) => {
-  authToken = token;
-};
-
 export const apiClient: AxiosInstance = axios.create({
   baseURL: env.apiBaseUrl,
   timeout: env.apiTimeoutMs,
 });
 
-
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(async (config) => {
+  const authToken = await getToken();
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
   }
@@ -49,6 +44,5 @@ apiClient.interceptors.response.use(
         error.response?.data?.message ?? error.message ?? "Unknown API error";
       return Promise.reject(new ApiError(message, error.response?.status));
     }
-    // return Promise.reject(error);
   },
 );
