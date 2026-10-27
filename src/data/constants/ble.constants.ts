@@ -6,3 +6,4 @@ export const WO_DATA_CANDIDATES = [
   "0000fee1-0000-1000-8000-00805f9b34fb",
   "0000fee3-0000-1000-8000-00805f9b34fb",
 ];
+export const DEVICE_NAME = "ZL02CPRO";

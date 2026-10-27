@@ -1,11 +1,7 @@
-import { PermissionsAndroid, Platform } from "react-native";
+import { PermissionsAndroid, PermissionStatus, Platform } from "react-native";
+import { BleManager, Device, Subscription } from "react-native-ble-plx";
 import {
-  BleError,
-  BleManager,
-  Device,
-  Subscription,
-} from "react-native-ble-plx";
-import {
+  DEVICE_NAME,
   HR_CHAR_RX_UUID,
   HR_SERVICE_UUID,
   WO_DATA_CANDIDATES,
@@ -14,97 +10,80 @@ import {
 
 export const manager = new BleManager();
 
-let isConnecting = false;
 let activeMonitorSubscriptions: Subscription[] = [];
 
-export const requestBluetoothPermissions = async (): Promise<boolean> => {
-  if (Platform.OS !== "android") return true;
-
-  if (Platform.Version >= 31) {
-    const granted = await PermissionsAndroid.requestMultiple([
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    ]);
-
-    return (
-      granted[PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN] ===
-        PermissionsAndroid.RESULTS.GRANTED &&
-      granted[PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT] ===
-        PermissionsAndroid.RESULTS.GRANTED &&
-      granted[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] ===
-        PermissionsAndroid.RESULTS.GRANTED
-    );
-  }
-
-  const granted = await PermissionsAndroid.request(
-    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-  );
-  return granted === PermissionsAndroid.RESULTS.GRANTED;
+const worstOf = (statuses: PermissionStatus[]): PermissionStatus => {
+  if (statuses.includes("never_ask_again")) return "never_ask_again";
+  if (statuses.includes("denied")) return "denied";
+  return "granted";
 };
 
-export const scanAndConnectToDevice = (
-  onDeviceFound: (device: Device) => void,
-  onConnected: (device: Device) => void,
-  onError: (error: BleError) => void,
-): Promise<void> => {
-  return new Promise(async (resolve, reject) => {
-    if (isConnecting) {
-      resolve();
-      return;
+export const requestBluetoothPermissions =
+  async (): Promise<PermissionStatus> => {
+    if (Platform.OS !== "android") return "granted";
+
+    if (Platform.Version >= 31) {
+      const result = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      ]);
+      return worstOf(Object.values(result));
     }
-    isConnecting = true;
 
-    try {
-      const connectedDevices = await manager.connectedDevices([]);
-      const existingDevice = connectedDevices.find(
-        (d) => d.name === "ZL02CPRO" || d.localName === "ZL02CPRO",
-      );
+    return PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
+  };
 
-      if (existingDevice) {
-        onDeviceFound(existingDevice);
-        await existingDevice.discoverAllServicesAndCharacteristics();
-        onConnected(existingDevice);
-        isConnecting = false;
-        resolve();
+const isTargetDevice = (d: Device) =>
+  d.name === DEVICE_NAME || d.localName === DEVICE_NAME;
+
+export class ScanTimeoutError extends Error {
+  constructor(public readonly timeoutMs: number) {
+    super(`Scan timed out after ${timeoutMs} ms`);
+    this.name = "ScanTimeoutError";
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+const scanForDevice = (timeoutMs: number): Promise<Device> =>
+  new Promise<Device>((resolve, reject) => {
+    const stop = () => manager.stopDeviceScan();
+
+    const timer = setTimeout(() => {
+      stop();
+      reject(new ScanTimeoutError(timeoutMs));
+    }, timeoutMs);
+
+    manager.startDeviceScan(null, null, (error, device) => {
+      if (error) {
+        clearTimeout(timer);
+        stop();
+        reject(error);
         return;
       }
-
-      manager.startDeviceScan(null, null, async (error, device) => {
-        if (error) {
-          isConnecting = false;
-          manager.stopDeviceScan();
-          onError(error);
-          reject(error);
-          return;
-        }
-
-        if (
-          device &&
-          (device.name === "ZL02CPRO" || device.localName === "ZL02CPRO")
-        ) {
-          manager.stopDeviceScan();
-          onDeviceFound(device);
-
-          try {
-            const connectedDevice = await device.connect();
-            await connectedDevice.discoverAllServicesAndCharacteristics();
-            onConnected(connectedDevice);
-            resolve();
-          } catch (err) {
-            onError(err as BleError);
-            reject(err);
-          } finally {
-            isConnecting = false;
-          }
-        }
-      });
-    } catch (err) {
-      isConnecting = false;
-      onError(err as BleError);
-      reject(err);
-    }
+      if (device && isTargetDevice(device)) {
+        clearTimeout(timer);
+        stop();
+        resolve(device);
+      }
+    });
   });
+
+export const scanAndConnect = async (timeoutMs: number): Promise<Device> => {
+  let connected = (await manager.connectedDevices([])).find(isTargetDevice);
+
+  if (!connected) {
+    const found = await scanForDevice(timeoutMs);
+    connected = await found.connect();
+  }
+
+  try {
+    return await connected.discoverAllServicesAndCharacteristics();
+  } catch (error) {
+    await connected.cancelConnection().catch(() => undefined);
+    throw error;
+  }
 };
 
 export const disconnectDevice = async (deviceId: string) => {

@@ -1,7 +1,12 @@
 import { WorkoutSample } from "@/domain/entities/WorkoutSample";
+import { ConnectResult } from "@/domain/usecases/ConnectToDevice";
 import { useEffect, useRef, useState } from "react";
 import { BleDevice } from "../../domain/entities/BleDevice";
 import { bleContainer } from "../di/bleContainer";
+import {
+  CONNECT_FAILURE_MESSAGES,
+  UNEXPECTED_MESSAGE,
+} from "../errors/connectMessages";
 
 export function useBle() {
   const [isConnected, setIsConnected] = useState(false);
@@ -33,26 +38,35 @@ export function useBle() {
     };
   }, [activeDevice]);
 
-  useEffect(() => {
-    if (isTimerRunning) {
-      timerRef.current = setInterval(() => {
-        setTime((prevTime) => prevTime + 1);
-      }, 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
+  // useEffect(() => {
+  //   if (isTimerRunning) {
+  //     timerRef.current = setInterval(() => {
+  //       setTime((prevTime) => prevTime + 1);
+  //     }, 1000);
+  //   } else {
+  //     clearInterval(timerRef.current);
+  //   }
 
-    return () => clearInterval(timerRef.current);
-  }, [isTimerRunning]);
+  //   return () => clearInterval(timerRef.current);
+  // }, [isTimerRunning]);
 
-  const connectToDevice = async () => {
+  const connectToDevice = async (): Promise<ConnectResult | null> => {
     setIsConnecting(true);
+    setError(null);
     try {
-      const device = await bleContainer.connectToDevice.execute();
-      setActiveDevice(device);
-      setIsConnected(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
+      const result = await bleContainer.connectToDevice.execute();
+
+      if (result.status === "connected") {
+        setActiveDevice(result.connectedDevice);
+        setIsConnected(true);
+      } else {
+        setError(CONNECT_FAILURE_MESSAGES[result.status]);
+      }
+      return result;
+    } catch (error) {
+      console.error("useBle.connectToDevice unexpected", error);
+      setError(UNEXPECTED_MESSAGE);
+      return null;
     } finally {
       setIsConnecting(false);
     }

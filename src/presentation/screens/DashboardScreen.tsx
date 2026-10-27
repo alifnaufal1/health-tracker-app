@@ -1,6 +1,4 @@
-import { useRouter } from "expo-router";
 import { Gauge, MapPin } from "lucide-react-native";
-import { useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BackgroundLoading } from "../components/BackgroundLoading";
@@ -40,7 +38,6 @@ const MOCK_RUN_DATA = {
 };
 
 export default function DashboardScreen() {
-  const router = useRouter();
   const ble = useBle();
   const { isLoading } = useAuth();
   // const { isDeviceRegistering } = useDevice(user, ble.activeDevice);
@@ -49,18 +46,7 @@ export default function DashboardScreen() {
   useErrorAlert(ble.error);
   const auth = useAuthStore((s) => s.auth);
 
-  const hasAttemptedRegister = useRef(false);
-
   const data = MOCK_RUN_DATA;
-
-  // useEffect(() => {
-  //   if (isRestoring) return;
-
-  //   if (!user?.userId && !hasAttemptedRegister.current) {
-  //     hasAttemptedRegister.current = true;
-  //     register("Agus Budi Cipto", "Agus", "AgusGanteng1");
-  //   }
-  // }, [isRestoring, user]);
 
   const handleMonitorToggle = () => {
     if (ble.isMonitoring) stop();
@@ -77,69 +63,67 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <>
-        {(ble.isConnecting || isLoading) && (
-          <BackgroundLoading
-            isRestoring={false}
-            isRegistering={isLoading}
-            isConnecting={ble.isConnecting}
-          />
-        )}
-        <View style={styles.container}>
-          <Header
-            label={
-              ble.isTimerRunning
-                ? formatDurationFromSeconds(ble.time)
-                : auth.status === "signed_in"
-                  ? auth.user.username
-                  : "Welcome"
-            }
-            isConnected={ble.isConnected}
-            isMonitoring={ble.isMonitoring}
-            onPress={handleConnection}
-          />
+      {(ble.isConnecting || isLoading) && (
+        <BackgroundLoading
+          isRestoring={false}
+          isRegistering={isLoading}
+          isConnecting={ble.isConnecting}
+        />
+      )}
+      <View style={styles.container}>
+        <Header
+          label={
+            ble.isTimerRunning
+              ? formatDurationFromSeconds(ble.time)
+              : auth.status === "signed_in"
+                ? auth.user.username
+                : "Welcome"
+          }
+          isConnected={ble.isConnected}
+          isMonitoring={ble.isMonitoring}
+          onPress={handleConnection}
+        />
 
-          {auth.status === "signed_out" && <SignCard />}
+        {auth.status === "signed_out" && <SignCard />}
 
-          <HeartRateCard
-            bpm={sampleData?.heartRate ?? 0}
-            zoneLabel={data.heartRate.zoneLabel}
-            activeBars={data.heartRate.activeBars}
-            currentBarIndex={data.heartRate.currentBarIndex}
-          />
+        <HeartRateCard
+          bpm={sampleData?.heartRate ?? 0}
+          zoneLabel={data.heartRate.zoneLabel}
+          activeBars={data.heartRate.activeBars}
+          currentBarIndex={data.heartRate.currentBarIndex}
+        />
 
-          <StepsCard steps={sampleData?.steps} />
+        <StepsCard steps={sampleData?.steps} />
 
-          <View style={styles.row}>
-            <StatCard
-              label="PACE"
-              value={formatPace(sampleData?.pace)}
-              unit={data.pace.unit}
-              icon={Gauge}
-            />
-            <StatCard
-              label="DISTANCE"
-              value={formatDistanceKm(sampleData?.distance)}
-              unit={"kilometers"}
-              icon={MapPin}
-            />
-          </View>
-
+        <View style={styles.row}>
           <StatCard
-            label="CALORIES"
-            value={sampleData?.calories.toString() ?? "0"}
-            unit={data.calories.unit}
-            variant="compact"
+            label="PACE"
+            value={formatPace(sampleData?.pace)}
+            unit={data.pace.unit}
+            icon={Gauge}
           />
-
-          <View style={styles.spacer} />
-
-          <PlayButton
-            onPress={handleMonitorToggle}
-            isPlaying={ble.isMonitoring}
+          <StatCard
+            label="DISTANCE"
+            value={formatDistanceKm(sampleData?.distance)}
+            unit={"kilometers"}
+            icon={MapPin}
           />
         </View>
-      </>
+
+        <StatCard
+          label="CALORIES"
+          value={sampleData?.calories.toString() ?? "0"}
+          unit={data.calories.unit}
+          variant="compact"
+        />
+
+        <View style={styles.spacer} />
+
+        <PlayButton
+          onPress={handleMonitorToggle}
+          isPlaying={ble.isMonitoring}
+        />
+      </View>
     </SafeAreaView>
   );
 }

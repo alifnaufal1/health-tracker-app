@@ -1,4 +1,3 @@
-import { Device } from "react-native-ble-plx";
 import { BleDevice } from "../../domain/entities/BleDevice";
 
 export class BleDeviceModel {
@@ -8,15 +7,6 @@ export class BleDeviceModel {
     public localName: string | null,
     public manufacturerData: string | null,
   ) {}
-
-  static fromDevice(device: Device): BleDeviceModel {
-    return new BleDeviceModel(
-      device.id,
-      device.name,
-      device.localName,
-      device.manufacturerData,
-    );
-  }
 
   toEntity(): BleDevice {
     return {

@@ -3,7 +3,7 @@ import { BleRepositoryImpl } from "../../data/repositories/BleRepositoryImpl";
 import { ConnectToDevice } from "../../domain/usecases/ConnectToDevice";
 import { StartRunMonitoring } from "../../domain/usecases/StartWorkoutMonitoring";
 
-const bleRepository = new BleRepositoryImpl();
+const bleRepository = new BleRepositoryImpl({ scanTimeoutMs: 30_000 });
 
 export const bleContainer = {
   connectToDevice: new ConnectToDevice(bleRepository),
